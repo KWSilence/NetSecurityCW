@@ -1,0 +1,17 @@
+package com.kwsilence.plugins
+
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.locations.KtorExperimentalLocationsAPI
+import io.ktor.server.locations.Location
+import io.ktor.server.locations.Locations
+
+@KtorExperimentalLocationsAPI
+object ApiLocations {
+    fun Application.configureLocations() {
+        install(Locations)
+    }
+
+    @Location("/shared/{path}")
+    data class SharedPath(val path: String)
+}
