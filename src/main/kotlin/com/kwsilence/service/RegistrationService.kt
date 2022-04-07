@@ -1,17 +1,48 @@
 package com.kwsilence.service
 
 import com.kwsilence.db.DatabaseRepository
+import com.kwsilence.db.Tokens
 import com.kwsilence.security.PasswordUtil
+import com.kwsilence.util.ApiHelper
+import com.kwsilence.util.ApiHelper.withBaseUrl
 import com.kwsilence.util.EmailUtil
+import com.kwsilence.util.EmailUtil.send
 import com.kwsilence.util.ExceptionUtil.throwBase
+import com.kwsilence.util.MessageTemplate
 import io.ktor.http.HttpStatusCode
+import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-// todo send confirm to mail
 class RegistrationService(private val repository: DatabaseRepository) {
     fun register(mailParam: String?, passwordParam: String?) {
         val email = getMailOrThrow(mailParam)
         val pass = getPasswordOrThrow(passwordParam)
-        repository.createUser(email, pass)
+        val userId = repository.createUser(email, pass)
+        CoroutineScope(Dispatchers.IO).launch {
+            sendConfirmMessage(userId, email)
+        }
+    }
+
+    fun sendConfirmMessage(userId: Int, mail: String) {
+        val confirmToken = UUID.randomUUID().toString()
+        repository.setUserToken(userId, confirmToken, Tokens.CONFIRM)
+        val confirmUrl = "${ApiHelper.CONFIRM_PATH.withBaseUrl()}/$confirmToken"
+        MessageTemplate.confirmEmail(mail, confirmUrl).send()
+    }
+
+    fun sendConfirmMessage(userMail: String?) {
+        repository.getUserByMail(userMail)?.let { user ->
+            if (user.isConfirmed) (HttpStatusCode.Conflict to "user already confirmed mail")
+            sendConfirmMessage(user.id.value, userMail!!)
+        } ?: (HttpStatusCode.BadRequest to "incorrect mail param").throwBase()
+    }
+
+    fun confirmMail(confirmToken: String) {
+        val userId = repository.getUserIdByToken(confirmToken, Tokens.CONFIRM) ?: HttpStatusCode.NotFound.throwBase()
+        repository.updateUser(userId, confirmed = true)
+        repository.resetUserTokens(userId, Tokens.CONFIRM)
     }
 
     private fun getMailOrThrow(mailParam: String?): String {

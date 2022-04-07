@@ -5,6 +5,7 @@ import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+@Deprecated("Rework JWT")
 object EncoderUtil {
     private val base64Encoder = Base64.getUrlEncoder()
     private val base64Decoder = Base64.getUrlDecoder()
@@ -15,14 +16,12 @@ object EncoderUtil {
         RS256  // RSA-SHA256
     }
 
-    @Deprecated("Rework JWT")
     fun signHS256(data: String, key: String = BuildConfig.jwtSecret): String {
         val secretKey = SecretKeySpec(key.toByteArray(Charsets.UTF_8), "HmacSHA256")
         val hs256 = Mac.getInstance("HmacSHA256").apply { init(secretKey) }
         return hs256.doFinal(data.toByteArray(Charsets.UTF_8)).toString(Charsets.UTF_8)
     }
 
-    @Deprecated("Rework JWT")
     fun signRS256(data: String): String {
         return ""
     }

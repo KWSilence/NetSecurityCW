@@ -5,8 +5,11 @@ val kotlinVersion = "1.6.10"
 val logbackVersion = "1.2.11"
 val exposedVersion = "0.37.3"
 val postgresVersion = "42.3.3"
+val jwtVersion = "0.11.2"
 
 val secretProperties = loadProperties("${projectDir.path}/secrets/secret.properties")
+val baseUrl = secretProperties["base_url"] as String
+
 val emailName = secretProperties["email_name"] as String
 val emailPass = secretProperties["email_pass"] as String
 val sharePath = secretProperties["share_path"] as String
@@ -15,6 +18,8 @@ val dbUrl = secretProperties["db_url"] as String
 val dbDriver = secretProperties["db_driver"] as String
 val dbUser = secretProperties["db_user"] as String
 val dbPass = secretProperties["db_pass"] as String
+
+val jwtSecret = secretProperties["jwt_secret"] as String
 
 plugins {
     application
@@ -39,6 +44,8 @@ repositories {
 }
 
 buildConfig {
+    buildConfigField("String", "baseUrl", "\"$baseUrl\"")
+
     buildConfigField("String", "emailName", "\"$emailName\"")
     buildConfigField("String", "emailPass", "\"$emailPass\"")
     buildConfigField("String", "sharePath", "\"$sharePath\"")
@@ -47,6 +54,8 @@ buildConfig {
     buildConfigField("String", "dbDriver", "\"$dbDriver\"")
     buildConfigField("String", "dbUser", "\"$dbUser\"")
     buildConfigField("String", "dbPass", "\"$dbPass\"")
+
+    buildConfigField("String", "jwtSecret", "\"$jwtSecret\"")
 }
 
 tasks {
@@ -77,6 +86,10 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.postgresql:postgresql:$postgresVersion")
+
+    implementation("io.jsonwebtoken:jjwt-api:$jwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:$jwtVersion")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jwtVersion")
 
     implementation("javax.mail:mail:1.5.0-b01")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")

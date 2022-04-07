@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Change Password</title>
+</head>
+<body>
+<form class="pure-form">
+    <fieldset>
+        <legend>Change Password</legend>
+
+        <label for="password">New password: </label>
+        <input type="password" id="password" required>
+        <input type="button" onclick="passVisibility()" id="vPassword" value="x">
+
+        <input type="button" onclick="return validatePassword()" id="submit" value="Confirm">
+    </fieldset>
+</form>
+<script>
+
+    function passVisibility() {
+        let password = document.getElementById("password")
+        let vPass = document.getElementById("vPassword")
+        if (vPass.value === "x") {
+            password.type = "text"
+            vPass.value = "v"
+        } else {
+            password.type = "password"
+            vPass.value = "x"
+        }
+    }
+
+    function validatePassword() {
+        let password = document.getElementById("password")
+        if (password.value.trim().length < 6) {
+            return false;
+        } else {
+            window.location.replace(window.location.href + "?password=" + password.value.trim());
+            return true;
+        }
+    }
+</script>
+</body>
+</html>

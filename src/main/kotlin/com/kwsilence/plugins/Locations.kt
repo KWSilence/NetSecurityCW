@@ -1,5 +1,6 @@
 package com.kwsilence.plugins
 
+import com.kwsilence.util.ApiHelper
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.locations.KtorExperimentalLocationsAPI
@@ -14,4 +15,10 @@ object ApiLocations {
 
     @Location("/shared/{path}")
     data class SharedPath(val path: String)
+
+    @Location("${ApiHelper.CONFIRM_PATH}/{token}")
+    data class ConfirmMail(val token: String)
+
+    @Location("${ApiHelper.RESET_PASS_PATH}/{token}")
+    data class ResetPassword(val token: String)
 }

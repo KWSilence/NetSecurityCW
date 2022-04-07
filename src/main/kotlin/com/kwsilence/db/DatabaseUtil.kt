@@ -1,7 +1,6 @@
 package com.kwsilence.db
 
-import com.kwsilence.db.table.LinkTypeTable
-import com.kwsilence.db.table.UserLinkTable
+import com.kwsilence.db.table.TokenTypeTable
 import com.kwsilence.db.table.UserTable
 import com.kwsilence.db.table.UserTokenTable
 import com.kwsilence.mserver.BuildConfig
@@ -25,9 +24,9 @@ object DatabaseUtil {
     fun initDatabase() {
         transaction(db) {
             addLogger(StdOutSqlLogger)
-            SchemaUtils.create(UserTable, UserTokenTable, UserLinkTable, LinkTypeTable)
-            DatabaseHelper.Links.values().forEach { link ->
-                LinkTypeTable.insertIgnore {
+            SchemaUtils.create(UserTable, UserTokenTable, TokenTypeTable)
+            Tokens.values().forEach { link ->
+                TokenTypeTable.insertIgnore {
                     it[id] = link.id
                     it[type] = link.type
                 }

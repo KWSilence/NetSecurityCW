@@ -1,6 +1,5 @@
 package com.kwsilence.util
 
-import com.kwsilence.data.MailMessage
 import com.kwsilence.mserver.BuildConfig
 import java.util.Date
 import java.util.Properties
@@ -32,18 +31,14 @@ object EmailUtil {
         }
     }
 
-    fun getDefaultMessage(mailTo: String, subject: String, text: String): Message =
+    fun getDefaultMessage(mailTo: String, subject: String, text: String, type: String? = null): Message =
         MimeMessage(session).apply {
             setFrom(InternetAddress(BuildConfig.emailName))
             setRecipients(Message.RecipientType.TO, InternetAddress.parse(mailTo, false))
-            setText(text)
+            type?.let { setContent(text, type) } ?: setText(text)
             setSubject(subject)
             sentDate = Date()
         }
-
-    fun MailMessage.send() {
-        getDefaultMessage(mailTo, subject, content).send()
-    }
 
     fun Message.send() {
         EmailUtil.session.transport.run {
