@@ -1,9 +1,9 @@
 package com.kwsilence.db
 
-import com.kwsilence.db.model.LinkType
-import com.kwsilence.db.model.User
-import com.kwsilence.db.model.UserLink
-import com.kwsilence.db.model.UserToken
+import com.kwsilence.db.table.LinkTypeTable
+import com.kwsilence.db.table.UserLinkTable
+import com.kwsilence.db.table.UserTable
+import com.kwsilence.db.table.UserTokenTable
 import com.kwsilence.mserver.BuildConfig
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -25,9 +25,9 @@ object DatabaseUtil {
     fun initDatabase() {
         transaction(db) {
             addLogger(StdOutSqlLogger)
-            SchemaUtils.create(User, UserToken, UserLink, LinkType)
+            SchemaUtils.create(UserTable, UserTokenTable, UserLinkTable, LinkTypeTable)
             DatabaseHelper.Links.values().forEach { link ->
-                LinkType.insertIgnore {
+                LinkTypeTable.insertIgnore {
                     it[id] = link.id
                     it[type] = link.type
                 }

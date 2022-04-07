@@ -1,10 +1,14 @@
 package com.kwsilence.db.model
 
-import org.jetbrains.exposed.dao.id.IntIdTable
+import com.kwsilence.db.table.UserTable
+import org.jetbrains.exposed.dao.IntEntity
+import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
 
-// todo crypt password
-object User : IntIdTable("users") {
-    val mail = varchar("mail", 40).uniqueIndex()
-    val password = varchar("password", 40)
-    val isConfirmed = bool("is_confirmed").default(false)
+class User(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<User>(UserTable)
+
+    var mail by UserTable.mail
+    var password by UserTable.password
+    var isConfirmed by UserTable.isConfirmed
 }

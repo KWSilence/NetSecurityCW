@@ -23,7 +23,7 @@ object EmailUtil {
             putIfAbsent("mail.smtp.ssl.trust", "smtp.mail.ru")
         }.let { props -> Session.getDefaultInstance(props, MailAuth(BuildConfig.emailName, BuildConfig.emailPass)) }
 
-    private val mailRegex = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}\$".toRegex()
+    private val mailRegex = "^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$".toRegex()
 
     fun checkMail(mail: String?): String? = mail?.trim()?.let {
         when (mailRegex.matches(it)) {

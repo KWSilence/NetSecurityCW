@@ -1,7 +1,7 @@
-package com.kwsilence.db.model
+package com.kwsilence.db.table
 
 import org.jetbrains.exposed.dao.id.IntIdTable
 
-object LinkType : IntIdTable("link_type") {
+object LinkTypeTable : IntIdTable("link_type") {
     val type = varchar("type", 40)
 }

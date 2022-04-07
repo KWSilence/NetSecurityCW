@@ -1,10 +1,13 @@
 package com.kwsilence
 
 import com.kwsilence.db.DatabaseUtil
-import io.ktor.server.application.*
-import com.kwsilence.plugins.*
 import com.kwsilence.plugins.ApiLocations.configureLocations
+import com.kwsilence.plugins.configureHTTP
+import com.kwsilence.plugins.configureMonitoring
+import com.kwsilence.plugins.configureRouting
+import com.kwsilence.plugins.configureSerialization
 import com.kwsilence.security.CertificateUtil
+import io.ktor.server.application.Application
 import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.netty.EngineMain
 
