@@ -36,6 +36,15 @@ class DatabaseRepository {
         }
     }
 
+    fun getUserTokenId(userId: Int, token: String, type: Tokens): Int? =
+        transaction {
+            UserTokenTable.select {
+                UserTokenTable.run {
+                    (this.userId eq userId) and (this.token eq token) and (this.type eq type.id)
+                }
+            }.firstOrNull()?.get(UserTokenTable.id)?.value
+        }
+
     fun getUserTokens(userId: Int, type: Tokens): List<String> =
         ArrayList<String>().apply {
             transaction {
@@ -54,11 +63,9 @@ class DatabaseRepository {
             }.firstOrNull()?.get(UserTokenTable.userId)?.value
         }
 
-    fun replaceRefreshToken(oldToken: String, newToken: String) {
+    fun updateToken(tokenId: Int, newToken: String) {
         transaction {
-            UserTokenTable.update(where = {
-                (UserTokenTable.token eq oldToken) and (UserTokenTable.type eq Tokens.REFRESH.id)
-            }) {
+            UserTokenTable.update(where = { (UserTokenTable.id eq tokenId) }) {
                 it[token] = newToken
             }
         }
@@ -74,10 +81,12 @@ class DatabaseRepository {
         }
     }
 
-    fun resetUserTokens(userId: Int, type: Tokens) {
+    fun resetUserTokens(userId: Int, types: List<Tokens>) {
         transaction {
-            UserTokenTable.deleteWhere {
-                (UserTokenTable.userId eq userId) and (UserTokenTable.type eq type.id)
+            types.forEach { type ->
+                UserTokenTable.deleteWhere {
+                    (UserTokenTable.userId eq userId) and (UserTokenTable.type eq type.id)
+                }
             }
         }
     }

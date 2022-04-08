@@ -42,14 +42,13 @@ fun Application.configureRouting() {
         }
 
         get("/login") {
-            val user = loginService.login(call.parameters["mail"], call.parameters["password"])
-            val pair = TokenUtil.getTokenPair(user)
-            call.respond(HttpStatusCode.OK, Json.encodeToString(pair))
+            val tokenPair = loginService.login(call.parameters["mail"], call.parameters["password"])
+            call.respond(HttpStatusCode.OK, Json.encodeToString(tokenPair))
         }
 
         get(ApiHelper.RESET_PASS_PATH) {
             resetPasswordService.sendResetPasswordMail(call.parameters["mail"])
-            call.respond(HttpStatusCode.OK, "reset password mail sent")
+            call.respond(HttpStatusCode.OK)
         }
 
         get<ApiLocations.ResetPassword> { reset ->
@@ -59,14 +58,14 @@ fun Application.configureRouting() {
             }
         }
 
-        // todo refresh token
         get("/refresh") {
-            val token = call.parameters["token"]
+            val tokenPair = loginService.refreshToken(call.parameters["token"])
+            call.respond(HttpStatusCode.OK, tokenPair)
         }
 
         get<ApiLocations.SharedPath> { shared ->
             val auth = call.request.headers["Authorization"]
-            TokenUtil.checkToken(auth)
+            TokenUtil.checkAuthToken(auth)
             val sharedFile = File("${BuildConfig.sharePath}/${shared.path}")
             when (sharedFile.exists() && sharedFile.isFile) {
                 true -> call.respondFile(sharedFile)
@@ -76,7 +75,7 @@ fun Application.configureRouting() {
 
         get(ApiHelper.CONFIRM_PATH) {
             registrationService.sendConfirmMessage(call.parameters["mail"])
-            call.respond(HttpStatusCode.OK, "confirm message sent")
+            call.respond(HttpStatusCode.OK)
         }
 
         get<ApiLocations.ConfirmMail> { confirm ->

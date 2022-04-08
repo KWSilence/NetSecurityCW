@@ -10,14 +10,20 @@ import com.kwsilence.util.ExceptionUtil.throwBase
 import com.kwsilence.util.MessageTemplate
 import io.ktor.http.HttpStatusCode
 import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ResetPasswordService(private val repository: DatabaseRepository) {
     fun sendResetPasswordMail(userMail: String?) {
-        repository.getUserIdByMail(userMail)?.let { userId ->
+        repository.getUserByMail(userMail)?.let { user ->
+            if (!user.isConfirmed) (HttpStatusCode.Conflict to "confirm mail before").throwBase()
             val resetToken = UUID.randomUUID().toString()
-            repository.setUserToken(userId, resetToken, Tokens.RESET)
-            val resetUrl = "${ApiHelper.RESET_PASS_PATH.withBaseUrl()}/$resetToken"
-            MessageTemplate.resetPassword(userMail!!, resetUrl).send()
+            repository.setUserToken(user.id.value, resetToken, Tokens.RESET)
+            CoroutineScope(Dispatchers.IO).launch {
+                val resetUrl = "${ApiHelper.RESET_PASS_PATH.withBaseUrl()}/$resetToken"
+                MessageTemplate.resetPassword(userMail!!, resetUrl).send()
+            }
         } ?: (HttpStatusCode.BadRequest to "incorrect mail param").throwBase()
     }
 
@@ -27,8 +33,10 @@ class ResetPasswordService(private val repository: DatabaseRepository) {
             null -> false
             else -> {
                 val pass = getPasswordOrThrow(newPass)
-                repository.updateUser(userId, pass = pass)
-                repository.resetUserTokens(userId, Tokens.RESET)
+                repository.apply {
+                    updateUser(userId, pass = pass)
+                    resetUserTokens(userId, listOf(Tokens.RESET, Tokens.REFRESH))
+                }
                 true
             }
         }

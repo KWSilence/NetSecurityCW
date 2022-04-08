@@ -20,21 +20,21 @@ class RegistrationService(private val repository: DatabaseRepository) {
         val email = getMailOrThrow(mailParam)
         val pass = getPasswordOrThrow(passwordParam)
         val userId = repository.createUser(email, pass)
-        CoroutineScope(Dispatchers.IO).launch {
-            sendConfirmMessage(userId, email)
-        }
+        sendConfirmMessage(userId, email)
     }
 
     fun sendConfirmMessage(userId: Int, mail: String) {
-        val confirmToken = UUID.randomUUID().toString()
-        repository.setUserToken(userId, confirmToken, Tokens.CONFIRM)
-        val confirmUrl = "${ApiHelper.CONFIRM_PATH.withBaseUrl()}/$confirmToken"
-        MessageTemplate.confirmEmail(mail, confirmUrl).send()
+        CoroutineScope(Dispatchers.IO).launch {
+            val confirmToken = UUID.randomUUID().toString()
+            repository.setUserToken(userId, confirmToken, Tokens.CONFIRM)
+            val confirmUrl = "${ApiHelper.CONFIRM_PATH.withBaseUrl()}/$confirmToken"
+            MessageTemplate.confirmEmail(mail, confirmUrl).send()
+        }
     }
 
     fun sendConfirmMessage(userMail: String?) {
         repository.getUserByMail(userMail)?.let { user ->
-            if (user.isConfirmed) (HttpStatusCode.Conflict to "user already confirmed mail")
+            if (user.isConfirmed) (HttpStatusCode.Conflict to "user already confirmed mail").throwBase()
             sendConfirmMessage(user.id.value, userMail!!)
         } ?: (HttpStatusCode.BadRequest to "incorrect mail param").throwBase()
     }
@@ -42,7 +42,7 @@ class RegistrationService(private val repository: DatabaseRepository) {
     fun confirmMail(confirmToken: String) {
         val userId = repository.getUserIdByToken(confirmToken, Tokens.CONFIRM) ?: HttpStatusCode.NotFound.throwBase()
         repository.updateUser(userId, confirmed = true)
-        repository.resetUserTokens(userId, Tokens.CONFIRM)
+        repository.resetUserTokens(userId, listOf(Tokens.CONFIRM))
     }
 
     private fun getMailOrThrow(mailParam: String?): String {

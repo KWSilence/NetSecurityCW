@@ -7,13 +7,28 @@ import com.kwsilence.plugins.configureMonitoring
 import com.kwsilence.plugins.configureRouting
 import com.kwsilence.plugins.configureSerialization
 import com.kwsilence.security.CertificateUtil
+import com.kwsilence.util.TokenUtil
 import io.ktor.server.application.Application
 import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.netty.EngineMain
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
-    CertificateUtil.create()
-    DatabaseUtil.initDatabase()
+    runBlocking {
+        val keyGenJob = CoroutineScope(Dispatchers.Default).launch {
+            TokenUtil.apply {
+                generateKeyPair()
+                privateKey
+                publicKey
+            }
+        }
+        CertificateUtil.create()
+        DatabaseUtil.initDatabase()
+        keyGenJob.join()
+    }
     EngineMain.main(args)
 }
 

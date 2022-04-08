@@ -1,6 +1,5 @@
 package com.kwsilence.util
 
-import com.kwsilence.db.model.User
 import com.kwsilence.mserver.BuildConfig
 import com.kwsilence.util.ExceptionUtil.throwBase
 import io.jsonwebtoken.JwtParser
@@ -8,50 +7,119 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
 import io.ktor.http.HttpStatusCode
+import java.io.File
+import java.io.FileOutputStream
+import java.security.KeyFactory
+import java.security.KeyPairGenerator
+import java.security.PrivateKey
+import java.security.PublicKey
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 import java.util.Calendar
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.crypto.SecretKey
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object TokenUtil {
     private const val EXP_DURATION = 5L
     private val TIME_UNIT = TimeUnit.MINUTES
 
-    fun getDefaultAuthKey(): SecretKey = Keys.hmacShaKeyFor(BuildConfig.jwtSecret.toByteArray())
-
+    val defaultAuthKey: SecretKey = Keys.hmacShaKeyFor(BuildConfig.jwtSecret.toByteArray())
     fun getExpirationDate(duration: Long = EXP_DURATION, unit: TimeUnit = TIME_UNIT): Date =
         Calendar.getInstance().apply {
             timeInMillis += TimeUnit.MILLISECONDS.convert(duration, unit)
         }.time
 
-    fun checkToken(auth: String?): JwtParser {
+    fun checkAuthToken(auth: String?, authKey: SecretKey = defaultAuthKey): JwtParser {
         auth ?: HttpStatusCode.Unauthorized.throwBase()
         return runCatching {
             Jwts.parserBuilder().apply {
-                setSigningKey(getDefaultAuthKey())
+                setSigningKey(authKey)
             }.build().apply {
                 parse(auth)
             }
         }.getOrNull() ?: HttpStatusCode.Unauthorized.throwBase()
     }
 
+    fun checkRefreshToken(refresh: String?, key: PublicKey = publicKey): JwtParser {
+        refresh ?: HttpStatusCode.BadRequest.throwBase()
+        return runCatching {
+            Jwts.parserBuilder().apply {
+                setSigningKey(key)
+            }.build().apply {
+                parse(refresh)
+            }
+        }.getOrNull() ?: HttpStatusCode.Forbidden.throwBase()
+    }
+
     @kotlinx.serialization.Serializable
-    data class TokenForUser(
+    data class UserTokenPair(
         val authToken: String,
         val refreshToken: String
     )
 
-    // todo refresh token
-    fun getTokenPair(user: User, key: SecretKey = getDefaultAuthKey()): TokenForUser {
-        val claims = mapOf("usr" to user.id.value)
+    fun getTokenPair(userId: Int, authKey: SecretKey = defaultAuthKey): UserTokenPair {
+        val claims = mapOf("usr" to userId)
         val authToken = Jwts.builder().apply {
             addClaims(claims)
             setId(UUID.randomUUID().toString())
             setIssuedAt(Date())
             setExpiration(getExpirationDate())
-            signWith(key, SignatureAlgorithm.HS256)
+            signWith(authKey, SignatureAlgorithm.HS256)
         }.compact()
-        return TokenForUser(authToken = authToken, refreshToken = "")
+        val refreshToken = Jwts.builder().apply {
+            addClaims(claims)
+            setIssuedAt(Date())
+            setExpiration((getExpirationDate(30, TimeUnit.DAYS)))
+            signWith(privateKey, SignatureAlgorithm.RS256)
+        }.compact()
+        return UserTokenPair(authToken = authToken, refreshToken = refreshToken)
+    }
+
+    suspend fun generateKeyPair() {
+        withContext(Dispatchers.IO) {
+            val keyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.genKeyPair()
+//            val encoder = Base64.getEncoder()
+
+            val privateFile = File("secrets/rsa.key")
+            if (!privateFile.exists()) {
+                FileOutputStream(privateFile).use { out ->
+                    out.write(keyPair.private.encoded)
+                }
+//                FileWriter(privateFile).use { out ->
+//                    out.write("-----BEGIN RSA PRIVATE KEY-----\n")
+//                    out.write(encoder.encodeToString(keyPair.private.encoded));
+//                    out.write("\n-----END RSA PRIVATE KEY-----\n")
+//                }
+            }
+
+            val publicFile = File("secrets/rsa.pub")
+            if (!publicFile.exists()) {
+                FileOutputStream(publicFile).use { out ->
+                    out.write(keyPair.public.encoded)
+                }
+//                FileWriter(publicFile).use { out ->
+//                    out.write("-----BEGIN RSA PUBLIC KEY-----\n")
+//                    out.write(encoder.encodeToString(keyPair.public.encoded));
+//                    out.write("\n-----END RSA PUBLIC KEY-----\n")
+//                }
+            }
+        }
+    }
+
+
+    val privateKey: PrivateKey by lazy {
+        val bytes = File("secrets/rsa.key").readBytes()
+        val ks = PKCS8EncodedKeySpec(bytes)
+        KeyFactory.getInstance("RSA").generatePrivate(ks)
+    }
+
+    val publicKey: PublicKey by lazy {
+        val bytes = File("secrets/rsa.pub").readBytes()
+        val ks = X509EncodedKeySpec(bytes)
+        KeyFactory.getInstance("RSA").generatePublic(ks)
     }
 }
