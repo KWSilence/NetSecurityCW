@@ -41,7 +41,7 @@ object EmailUtil {
         }
 
     fun Message.send() {
-        EmailUtil.session.transport.run {
+        session.transport.run {
             connect()
             sendMessage(this@send, allRecipients)
             close()
