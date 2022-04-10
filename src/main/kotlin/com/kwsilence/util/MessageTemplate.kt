@@ -5,8 +5,10 @@ import javax.mail.Message
 
 object MessageTemplate {
 
-    // todo delete
-    private const val testMail: String = BuildConfig.emailName
+    private val testMail: String? = when (BuildConfig.debug) {
+        true -> BuildConfig.emailName
+        false -> null
+    }
 
     fun confirmEmail(mailTo: String, url: String): Message =
         EmailUtil.getDefaultMessage(

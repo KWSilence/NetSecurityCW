@@ -8,6 +8,7 @@ import com.kwsilence.service.ResetPasswordService
 import com.kwsilence.util.ApiHelper
 import com.kwsilence.util.ExceptionUtil
 import com.kwsilence.util.TokenUtil
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -15,10 +16,12 @@ import io.ktor.server.application.install
 import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.get
 import io.ktor.server.plugins.StatusPages
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import java.io.File
 import kotlinx.serialization.encodeToString
@@ -36,31 +39,38 @@ fun Application.configureRouting() {
             call.respondText("Hello World!")
         }
 
-        get("/register") {
-            registrationService.register(call.parameters["mail"], call.parameters["password"])
+        post("/register") {
+            registrationService.register(call.receive())
             call.respond(HttpStatusCode.OK, "Registration successful")
         }
 
-        get("/login") {
-            val tokenPair = loginService.login(call.parameters["mail"], call.parameters["password"])
-            call.respond(HttpStatusCode.OK, Json.encodeToString(tokenPair))
+        post("/login") {
+            val tokenPair = loginService.login(call.receive())
+            call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
+                Json.encodeToString(tokenPair)
+            }
         }
 
         get(ApiHelper.RESET_PASS_PATH) {
             resetPasswordService.sendResetPasswordMail(call.parameters["mail"])
-            call.respond(HttpStatusCode.OK)
+            call.respond(HttpStatusCode.OK, "password reset link sent")
         }
 
-        get<ApiLocations.ResetPassword> { reset ->
-            when (resetPasswordService.resetPassword(reset.token, call.parameters["password"])) {
-                true -> call.respond(HttpStatusCode.OK, "password successfully changed")
-                false -> call.respondFile(File("html/resetpass.html"))
-            }
+        get("${ApiHelper.RESET_PASS_PATH}/{token}") {
+            resetPasswordService.findUserId(call.parameters["token"])
+            call.respondFile(File("html/resetpass.html"))
+        }
+
+        post("${ApiHelper.RESET_PASS_PATH}/{token}") {
+            resetPasswordService.resetPassword(call.parameters["token"], call.receive())
+            call.respond(HttpStatusCode.OK, "password successfully changed")
         }
 
         get("/refresh") {
-            val tokenPair = loginService.refreshToken(call.parameters["token"])
-            call.respond(HttpStatusCode.OK, tokenPair)
+            val tokenPair = loginService.refreshToken(call.request.headers["Authorization"])
+            call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
+                Json.encodeToString(tokenPair)
+            }
         }
 
         get<ApiLocations.SharedPath> { shared ->
@@ -75,7 +85,7 @@ fun Application.configureRouting() {
 
         get(ApiHelper.CONFIRM_PATH) {
             registrationService.sendConfirmMessage(call.parameters["mail"])
-            call.respond(HttpStatusCode.OK)
+            call.respond(HttpStatusCode.OK, "confirm mail link sent")
         }
 
         get<ApiLocations.ConfirmMail> { confirm ->

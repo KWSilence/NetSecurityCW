@@ -1,6 +1,7 @@
 package com.kwsilence.util
 
 import com.kwsilence.mserver.BuildConfig
+import com.kwsilence.service.data.UserTokenPair
 import com.kwsilence.util.ExceptionUtil.throwBase
 import io.jsonwebtoken.JwtParser
 import io.jsonwebtoken.Jwts
@@ -54,12 +55,6 @@ object TokenUtil {
             }
         }.getOrNull() ?: HttpStatusCode.Forbidden.throwBase()
     }
-
-    @kotlinx.serialization.Serializable
-    data class UserTokenPair(
-        val authToken: String,
-        val refreshToken: String
-    )
 
     fun getTokenPair(userId: Int, authKey: SecretKey = defaultAuthKey): UserTokenPair {
         val claims = mapOf("usr" to userId)

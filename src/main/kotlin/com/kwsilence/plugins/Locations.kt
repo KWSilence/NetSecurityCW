@@ -18,7 +18,4 @@ object ApiLocations {
 
     @Location("${ApiHelper.CONFIRM_PATH}/{token}")
     data class ConfirmMail(val token: String)
-
-    @Location("${ApiHelper.RESET_PASS_PATH}/{token}")
-    data class ResetPassword(val token: String)
 }

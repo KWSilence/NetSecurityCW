@@ -3,6 +3,7 @@ package com.kwsilence.service
 import com.kwsilence.db.DatabaseRepository
 import com.kwsilence.db.Tokens
 import com.kwsilence.security.PasswordUtil
+import com.kwsilence.service.data.UserCred
 import com.kwsilence.util.ApiHelper
 import com.kwsilence.util.ApiHelper.withBaseUrl
 import com.kwsilence.util.EmailUtil
@@ -16,9 +17,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class RegistrationService(private val repository: DatabaseRepository) {
-    fun register(mailParam: String?, passwordParam: String?) {
-        val email = getMailOrThrow(mailParam)
-        val pass = getPasswordOrThrow(passwordParam)
+    fun register(cred: UserCred?) {
+        val email = getMailOrThrow(cred?.mail)
+        val pass = getPasswordOrThrow(cred?.pass)
         val userId = repository.createUser(email, pass)
         sendConfirmMessage(userId, email)
     }
@@ -49,7 +50,7 @@ class RegistrationService(private val repository: DatabaseRepository) {
         val checkMail = EmailUtil.checkMail(mailParam)
         val repUser = repository.getUserByMail(checkMail)
         return when {
-            mailParam == null -> (HttpStatusCode.BadRequest to "set mail param").throwBase()
+            mailParam == null -> (HttpStatusCode.BadRequest to "set mail in body").throwBase()
             checkMail == null -> (HttpStatusCode.BadRequest to "incorrect mail").throwBase()
             repUser != null -> (HttpStatusCode.BadRequest to "user already exist").throwBase()
             else -> checkMail
@@ -59,7 +60,7 @@ class RegistrationService(private val repository: DatabaseRepository) {
     private fun getPasswordOrThrow(passwordParam: String?): String =
         passwordParam?.trim().let { pass ->
             when {
-                pass == null -> (HttpStatusCode.BadRequest to "set password param").throwBase()
+                pass == null -> (HttpStatusCode.BadRequest to "set password in body").throwBase()
                 pass.length < 6 -> (HttpStatusCode.BadRequest to "short password (less than 6)").throwBase()
                 else -> PasswordUtil.generatePassword(pass)
             }

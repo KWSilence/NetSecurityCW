@@ -5,17 +5,20 @@
     <title>Change Password</title>
 </head>
 <body>
-<form class="pure-form">
-    <fieldset>
-        <legend>Change Password</legend>
+<div id="result" style="visibility: hidden"></div>
+<div id="form">
+    <form class="pure-form">
+        <fieldset>
+            <legend>Change Password</legend>
 
-        <label for="password">New password: </label>
-        <input type="password" id="password" required>
-        <input type="button" onclick="passVisibility()" id="vPassword" value="x">
+            <label for="password">New password: </label>
+            <input type="password" id="password" required>
+            <input type="button" onclick="passVisibility()" id="vPassword" value="x">
 
-        <input type="button" onclick="return validatePassword()" id="submit" value="Confirm">
-    </fieldset>
-</form>
+            <input type="button" onclick="return validatePassword()" id="submit" value="Confirm">
+        </fieldset>
+    </form>
+</div>
 <script>
 
     function passVisibility() {
@@ -32,12 +35,29 @@
 
     function validatePassword() {
         let password = document.getElementById("password")
-        if (password.value.trim().length < 6) {
-            return false;
-        } else {
-            window.location.replace(window.location.href + "?password=" + password.value.trim());
-            return true;
-        }
+
+        let form = document.getElementById("form")
+        let result = document.getElementById("result")
+        document.getElementById("password")
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", window.location.href);
+        xhr.setRequestHeader("Accept", "application/json");
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    form.style.visibility = "hidden"
+                    result.innerText = xhr.responseText
+                    result.style.visibility = "visible"
+                } else {
+                    alert(xhr.responseText)
+                }
+            }
+        };
+
+        let data = "{ \"newPassword\": " + password.value.trim() + "; }";
+        xhr.send(data);
     }
 </script>
 </body>

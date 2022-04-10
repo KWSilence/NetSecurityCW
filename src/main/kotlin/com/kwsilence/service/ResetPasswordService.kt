@@ -3,6 +3,7 @@ package com.kwsilence.service
 import com.kwsilence.db.DatabaseRepository
 import com.kwsilence.db.Tokens
 import com.kwsilence.security.PasswordUtil
+import com.kwsilence.service.data.PasswordReset
 import com.kwsilence.util.ApiHelper
 import com.kwsilence.util.ApiHelper.withBaseUrl
 import com.kwsilence.util.EmailUtil.send
@@ -27,20 +28,24 @@ class ResetPasswordService(private val repository: DatabaseRepository) {
         } ?: (HttpStatusCode.BadRequest to "incorrect mail param").throwBase()
     }
 
-    fun resetPassword(token: String, newPass: String?): Boolean {
-        val userId = repository.getUserIdByToken(token, Tokens.RESET) ?: HttpStatusCode.NotFound.throwBase()
-        return when (newPass) {
-            null -> false
+    fun resetPassword(token: String?, reset: PasswordReset?) {
+        val userId = findUserId(token)
+        when (reset?.newPassword) {
+            null -> (HttpStatusCode.BadRequest to "set new password in body").throwBase()
             else -> {
-                val pass = getPasswordOrThrow(newPass)
+                val pass = getPasswordOrThrow(reset.newPassword)
                 repository.apply {
                     updateUser(userId, pass = pass)
                     resetUserTokens(userId, listOf(Tokens.RESET, Tokens.REFRESH))
                 }
-                true
             }
         }
     }
+
+    fun findUserId(token: String?): Int =
+        token?.let {
+            repository.getUserIdByToken(token, Tokens.RESET)
+        } ?: HttpStatusCode.NotFound.throwBase()
 
     private fun getPasswordOrThrow(newPass: String): String =
         newPass.trim().let { pass ->
