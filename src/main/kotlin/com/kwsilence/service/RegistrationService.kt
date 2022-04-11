@@ -1,7 +1,7 @@
 package com.kwsilence.service
 
-import com.kwsilence.db.DatabaseRepository
 import com.kwsilence.db.Tokens
+import com.kwsilence.db.repository.AuthRepository
 import com.kwsilence.security.PasswordUtil
 import com.kwsilence.service.data.UserCred
 import com.kwsilence.util.ApiHelper
@@ -16,7 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class RegistrationService(private val repository: DatabaseRepository) {
+class RegistrationService(private val repository: AuthRepository) {
     fun register(cred: UserCred?) {
         val email = getMailOrThrow(cred?.mail)
         val pass = getPasswordOrThrow(cred?.pass)
@@ -24,7 +24,7 @@ class RegistrationService(private val repository: DatabaseRepository) {
         sendConfirmMessage(userId, email)
     }
 
-    fun sendConfirmMessage(userId: Int, mail: String) {
+    private fun sendConfirmMessage(userId: Int, mail: String) {
         CoroutineScope(Dispatchers.IO).launch {
             val confirmToken = UUID.randomUUID().toString()
             repository.setUserToken(userId, confirmToken, Tokens.CONFIRM)

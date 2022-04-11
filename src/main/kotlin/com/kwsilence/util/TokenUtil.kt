@@ -26,10 +26,10 @@ import kotlinx.coroutines.withContext
 
 object TokenUtil {
     private const val EXP_DURATION = 5L
-    private val TIME_UNIT = TimeUnit.MINUTES
+    private val TIME_UNIT = if (BuildConfig.debug) TimeUnit.HOURS else TimeUnit.MINUTES
 
-    val defaultAuthKey: SecretKey = Keys.hmacShaKeyFor(BuildConfig.jwtSecret.toByteArray())
-    fun getExpirationDate(duration: Long = EXP_DURATION, unit: TimeUnit = TIME_UNIT): Date =
+    private val defaultAuthKey: SecretKey = Keys.hmacShaKeyFor(BuildConfig.jwtSecret.toByteArray())
+    private fun getExpirationDate(duration: Long = EXP_DURATION, unit: TimeUnit = TIME_UNIT): Date =
         Calendar.getInstance().apply {
             timeInMillis += TimeUnit.MILLISECONDS.convert(duration, unit)
         }.time
@@ -77,18 +77,12 @@ object TokenUtil {
     suspend fun generateKeyPair() {
         withContext(Dispatchers.IO) {
             val keyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.genKeyPair()
-//            val encoder = Base64.getEncoder()
 
             val privateFile = File("secrets/rsa.key")
             if (!privateFile.exists()) {
                 FileOutputStream(privateFile).use { out ->
                     out.write(keyPair.private.encoded)
                 }
-//                FileWriter(privateFile).use { out ->
-//                    out.write("-----BEGIN RSA PRIVATE KEY-----\n")
-//                    out.write(encoder.encodeToString(keyPair.private.encoded));
-//                    out.write("\n-----END RSA PRIVATE KEY-----\n")
-//                }
             }
 
             val publicFile = File("secrets/rsa.pub")
@@ -96,11 +90,6 @@ object TokenUtil {
                 FileOutputStream(publicFile).use { out ->
                     out.write(keyPair.public.encoded)
                 }
-//                FileWriter(publicFile).use { out ->
-//                    out.write("-----BEGIN RSA PUBLIC KEY-----\n")
-//                    out.write(encoder.encodeToString(keyPair.public.encoded));
-//                    out.write("\n-----END RSA PUBLIC KEY-----\n")
-//                }
             }
         }
     }

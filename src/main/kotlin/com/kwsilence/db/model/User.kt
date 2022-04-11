@@ -1,6 +1,6 @@
 package com.kwsilence.db.model
 
-import com.kwsilence.db.table.UserTable
+import com.kwsilence.db.table.auth.UserTable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

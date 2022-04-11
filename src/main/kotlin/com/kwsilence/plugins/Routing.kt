@@ -1,9 +1,11 @@
 package com.kwsilence.plugins
 
-import com.kwsilence.db.DatabaseRepository
+import com.kwsilence.db.repository.AuthRepository
+import com.kwsilence.db.repository.MangaRepository
 import com.kwsilence.service.LoginService
 import com.kwsilence.service.RegistrationService
 import com.kwsilence.service.ResetPasswordService
+import com.kwsilence.service.SyncService
 import com.kwsilence.util.ApiHelper
 import com.kwsilence.util.ExceptionUtil
 import com.kwsilence.util.ExceptionUtil.throwBase
@@ -30,10 +32,12 @@ import kotlinx.serialization.json.Json
 
 @KtorExperimentalLocationsAPI
 fun Application.configureRouting() {
-    val repository = DatabaseRepository()
-    val loginService = LoginService(repository)
-    val registrationService = RegistrationService(repository)
-    val resetPasswordService = ResetPasswordService(repository)
+    val authRepository = AuthRepository()
+    val mangaRepository = MangaRepository()
+    val loginService = LoginService(authRepository)
+    val registrationService = RegistrationService(authRepository)
+    val resetPasswordService = ResetPasswordService(authRepository)
+    val syncService = SyncService(mangaRepository)
 
     routing {
         get("/") {
@@ -108,6 +112,13 @@ fun Application.configureRouting() {
             FileUtil.shared("extension/info.json")?.let { info ->
                 call.respondFile(info)
             } ?: HttpStatusCode.NotFound.throwBase()
+        }
+
+        post("/update") {
+            val result = syncService.update(call.request.headers["Authorization"], call.receiveOrNull())
+            call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
+                Json.encodeToString(result)
+            }
         }
 
         install(StatusPages) {

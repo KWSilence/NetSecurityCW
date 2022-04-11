@@ -1,7 +1,7 @@
 package com.kwsilence.service
 
-import com.kwsilence.db.DatabaseRepository
 import com.kwsilence.db.Tokens
+import com.kwsilence.db.repository.AuthRepository
 import com.kwsilence.security.PasswordUtil
 import com.kwsilence.service.data.UserCred
 import com.kwsilence.service.data.UserTokenPair
@@ -9,7 +9,7 @@ import com.kwsilence.util.ExceptionUtil.throwBase
 import com.kwsilence.util.TokenUtil
 import io.ktor.http.HttpStatusCode
 
-class LoginService(private val repository: DatabaseRepository) {
+class LoginService(private val repository: AuthRepository) {
     fun login(cred: UserCred?, checkConfirm: Boolean = true): UserTokenPair {
         val email = getMailOrThrow(cred?.mail)
         val pass = getPasswordOrThrow(cred?.pass)

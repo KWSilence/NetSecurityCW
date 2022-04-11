@@ -1,7 +1,7 @@
 package com.kwsilence.service
 
-import com.kwsilence.db.DatabaseRepository
 import com.kwsilence.db.Tokens
+import com.kwsilence.db.repository.AuthRepository
 import com.kwsilence.security.PasswordUtil
 import com.kwsilence.service.data.PasswordReset
 import com.kwsilence.util.ApiHelper
@@ -15,7 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class ResetPasswordService(private val repository: DatabaseRepository) {
+class ResetPasswordService(private val repository: AuthRepository) {
     fun sendResetPasswordMail(userMail: String?) {
         repository.getUserByMail(userMail)?.let { user ->
             if (!user.isConfirmed) (HttpStatusCode.Conflict to "confirm mail before").throwBase()

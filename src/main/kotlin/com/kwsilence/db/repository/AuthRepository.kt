@@ -1,8 +1,9 @@
-package com.kwsilence.db
+package com.kwsilence.db.repository
 
+import com.kwsilence.db.Tokens
 import com.kwsilence.db.model.User
-import com.kwsilence.db.table.UserTable
-import com.kwsilence.db.table.UserTokenTable
+import com.kwsilence.db.table.auth.UserTable
+import com.kwsilence.db.table.auth.UserTokenTable
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -10,7 +11,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-class DatabaseRepository {
+class AuthRepository {
     fun getUserByMail(email: String?): User? =
         transaction {
             email?.let {
