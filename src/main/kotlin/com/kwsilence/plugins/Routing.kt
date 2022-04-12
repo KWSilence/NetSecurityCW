@@ -121,6 +121,13 @@ fun Application.configureRouting() {
             }
         }
 
+        post("/sync") {
+            val result = syncService.sync(call.request.headers["Authorization"], call.receiveOrNull())
+            call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
+                Json.encodeToString(result)
+            }
+        }
+
         install(StatusPages) {
             exception<ExceptionUtil.BaseException> { call, baseException ->
                 when (val message = baseException.message) {

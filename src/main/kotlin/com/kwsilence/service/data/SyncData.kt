@@ -13,5 +13,5 @@ data class ResponseSyncData(
     val uid: String,
     val tb: String,
     val op: Int,
-    val data: Map<String, String?> = mapOf()
+    val data: Map<String, String?>? = null
 )
