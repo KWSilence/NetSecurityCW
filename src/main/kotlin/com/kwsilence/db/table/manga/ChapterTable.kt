@@ -1,5 +1,7 @@
 package com.kwsilence.db.table.manga
 
+import com.kwsilence.service.data.Operation
+import java.util.Date
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.ReferenceOption
 
@@ -12,5 +14,6 @@ object ChapterTable : UUIDTable("chapter") {
     val lastPageRead = integer("last_page_read")
     val uploadDate = long("upload_date")
     val updateDate = long("update_date")
-    val deleted = bool("deleted").default(false)
+    val createDate = long("create_date").default(Date().time)
+    val operation = integer("operation").default(Operation.INS.id)
 }

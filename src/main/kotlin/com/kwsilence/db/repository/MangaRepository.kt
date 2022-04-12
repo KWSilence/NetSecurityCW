@@ -54,7 +54,7 @@ class MangaRepository {
             find { it.lid == mangaId && it.tb == "manga" }?.uid?.toUUID()
         }
 
-    private infix fun List<ResponseDataUpdate>.getCategoryId(record: DataUpdate):UUID?=
+    private infix fun List<ResponseDataUpdate>.getCategoryId(record: DataUpdate): UUID? =
         record.data["_categoryId"]?.toInt()?.let { categoryId ->
             find { it.lid == categoryId && it.tb == "category" }?.uid?.toUUID()
         }
@@ -67,20 +67,24 @@ class MangaRepository {
                     update({ id eq uid.toUUID() }) {
                         it[name] = data["name"] ?: ("category" missing "name")
                         it[updateDate] = updateTime
+                        it[operation] = Operation.UPD.id
                     }
                 }
             }
             Operation.INS.id -> {
                 insertAndGetId {
                     it[name] = data["name"] ?: ("category" missing "name")
-                    it[updateDate] = updateTime
+                    updateTime.let { date ->
+                        it[updateDate] = date
+                        it[createDate] = date
+                    }
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[deleted] = true
                         it[updateDate] = updateTime
+                        it[operation] = Operation.DEL.id
                     }
                 }
             }
@@ -101,6 +105,7 @@ class MangaRepository {
                         it[lastPageRead] = data["lastPageRead"]?.toInt() ?: ("chapter" missing "lastPageRead")
                         it[uploadDate] = data["uploadDate"]?.toLong() ?: ("chapter" missing "uploadDate")
                         it[updateDate] = updateTime
+                        it[operation] = Operation.UPD.id
                     }
                 }
             }
@@ -113,14 +118,17 @@ class MangaRepository {
                     it[number] = data["number"]?.toInt() ?: ("chapter" missing "number")
                     it[lastPageRead] = data["lastPageRead"]?.toInt() ?: ("chapter" missing "lastPageRead")
                     it[uploadDate] = data["uploadDate"]?.toLong() ?: ("chapter" missing "uploadDate")
-                    it[updateDate] = updateTime
+                    updateTime.let { date ->
+                        it[updateDate] = date
+                        it[createDate] = date
+                    }
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[deleted] = true
                         it[updateDate] = updateTime
+                        it[operation] = Operation.DEL.id
                     }
                 }
             }
@@ -137,6 +145,7 @@ class MangaRepository {
                         it[mangaId] = data["mangaId"]?.toUUID() ?: mangaUID ?: ("manga" missing "mangaId")
                         it[categoryId] = data["categoryId"]?.toUUID() ?: categoryUID ?: ("manga" missing "categoryId")
                         it[updateDate] = updateTime
+                        it[operation] = Operation.UPD.id
                     }
                 }
             }
@@ -144,14 +153,17 @@ class MangaRepository {
                 insertAndGetId {
                     it[mangaId] = data["mangaId"]?.toUUID() ?: mangaUID ?: ("manga" missing "mangaId")
                     it[categoryId] = data["categoryId"]?.toUUID() ?: categoryUID ?: ("manga" missing "categoryId")
-                    it[updateDate] = updateTime
+                    updateTime.let { date ->
+                        it[updateDate] = date
+                        it[createDate] = date
+                    }
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[deleted] = true
                         it[updateDate] = updateTime
+                        it[operation] = Operation.DEL.id
                     }
                 }
             }
@@ -174,6 +186,7 @@ class MangaRepository {
                         it[genres] = data["genres"]
                         it[coverUrl] = data["coverUrl"]
                         it[updateDate] = updateTime
+                        it[operation] = Operation.UPD.id
                     }
                 }
             }
@@ -187,14 +200,17 @@ class MangaRepository {
                     it[description] = data["description"]
                     it[genres] = data["genres"]
                     it[coverUrl] = data["coverUrl"]
-                    it[updateDate] = updateTime
+                    updateTime.let { date ->
+                        it[updateDate] = date
+                        it[createDate] = date
+                    }
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
                         it[updateDate] = updateTime
-                        it[deleted] = true
+                        it[operation] = Operation.DEL.id
                     }
                 }
             }
@@ -210,6 +226,7 @@ class MangaRepository {
                     update({ id eq uid.toUUID() }) {
                         it[categoryId] = data["categoryId"]?.toUUID() ?: categoryUID ?: ("UsrCat" missing "categoryId")
                         it[updateDate] = updateTime
+                        it[operation] = Operation.UPD.id
                     }
                 }
             }
@@ -217,14 +234,17 @@ class MangaRepository {
                 insertAndGetId {
                     it[this.userId] = userId
                     it[categoryId] = data["categoryId"]?.toUUID() ?: categoryUID ?: ("UsrCat" missing "categoryId")
-                    it[updateDate] = updateTime
+                    updateTime.let { date ->
+                        it[updateDate] = date
+                        it[createDate] = date
+                    }
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
                         it[updateDate] = updateTime
-                        it[deleted] = true
+                        it[operation] = Operation.DEL.id
                     }
                 }
             }
