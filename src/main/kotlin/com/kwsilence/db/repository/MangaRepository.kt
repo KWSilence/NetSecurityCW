@@ -1,5 +1,6 @@
 package com.kwsilence.db.repository
 
+import com.kwsilence.db.Operation
 import com.kwsilence.db.model.tables
 import com.kwsilence.db.table.manga.CategoryTable
 import com.kwsilence.db.table.manga.ChapterTable
@@ -7,7 +8,6 @@ import com.kwsilence.db.table.manga.MangaCategoryTable
 import com.kwsilence.db.table.manga.MangaTable
 import com.kwsilence.db.table.manga.UserCategoryTable
 import com.kwsilence.service.data.DataUpdate
-import com.kwsilence.service.data.Operation
 import com.kwsilence.service.data.ResponseDataUpdate
 import com.kwsilence.service.data.ResponseSyncData
 import com.kwsilence.service.data.SyncData
@@ -96,6 +96,7 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
+                    it[operation] = Operation.INS.id
                 }.value.toString()
             }
             Operation.DEL.id -> {
@@ -160,6 +161,7 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
+                    it[operation] = Operation.INS.id
                 }.value.toString()
             }
             Operation.DEL.id -> {
@@ -193,6 +195,7 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
+                    it[operation] = Operation.INS.id
                 }.value.toString()
             }
             Operation.DEL.id -> {
@@ -242,6 +245,7 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
+                    it[operation] = Operation.INS.id
                 }.value.toString()
             }
             Operation.DEL.id -> {
@@ -262,7 +266,7 @@ class MangaRepository {
         }.forEach {
             val createDate = it[CategoryTable.createDate]
             val updateDate = it[CategoryTable.updateDate]
-            val operation = it[CategoryTable.operation]
+            val operation = it[CategoryTable.operation].value
             val updateMap = mapOf(
                 "name" to it[CategoryTable.name],
                 "updateDate" to it[CategoryTable.updateDate].toString()
@@ -282,7 +286,7 @@ class MangaRepository {
         }.forEach {
             val createDate = it[MangaCategoryTable.createDate]
             val updateDate = it[MangaCategoryTable.updateDate]
-            val operation = it[MangaCategoryTable.operation]
+            val operation = it[MangaCategoryTable.operation].value
             val updateMap = mapOf(
                 "mangaId" to it[MangaCategoryTable.mangaId].value.toString(),
                 "categoryId" to it[MangaCategoryTable.categoryId].value.toString(),
@@ -303,7 +307,7 @@ class MangaRepository {
         }.forEach {
             val createDate = it[MangaTable.createDate]
             val updateDate = it[MangaTable.updateDate]
-            val operation = it[MangaTable.operation]
+            val operation = it[MangaTable.operation].value
             val updateMap = mapOf(
                 "title" to it[MangaTable.title],
                 "categoryId" to it[MangaTable.sourceId].toString(),
@@ -333,7 +337,7 @@ class MangaRepository {
         }.forEach {
             val createDate = it[ChapterTable.createDate]
             val updateDate = it[ChapterTable.updateDate]
-            val operation = it[ChapterTable.operation]
+            val operation = it[ChapterTable.operation].value
             val updateMap = mapOf(
                 "name" to it[ChapterTable.name],
                 "mangaId" to it[ChapterTable.mangaId].value.toString(),

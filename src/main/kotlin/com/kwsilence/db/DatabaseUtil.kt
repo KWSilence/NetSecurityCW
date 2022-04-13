@@ -7,6 +7,7 @@ import com.kwsilence.db.table.manga.CategoryTable
 import com.kwsilence.db.table.manga.ChapterTable
 import com.kwsilence.db.table.manga.MangaCategoryTable
 import com.kwsilence.db.table.manga.MangaTable
+import com.kwsilence.db.table.manga.OperationTypeTable
 import com.kwsilence.db.table.manga.UserCategoryTable
 import com.kwsilence.mserver.BuildConfig
 import org.jetbrains.exposed.sql.Database
@@ -35,16 +36,25 @@ object DatabaseUtil {
                 UserTable,
                 UserTokenTable,
                 TokenTypeTable,
-                CategoryTable,
+
                 UserCategoryTable,
+
+                OperationTypeTable,
+                CategoryTable,
                 MangaTable,
                 MangaCategoryTable,
-                ChapterTable
+                ChapterTable,
             )
             Tokens.values().forEach { link ->
                 TokenTypeTable.insertIgnore {
                     it[id] = link.id
                     it[type] = link.type
+                }
+            }
+            Operation.values().forEach { operation ->
+                OperationTypeTable.insertIgnore {
+                    it[id] = operation.id
+                    it[type] = operation.type
                 }
             }
         }
