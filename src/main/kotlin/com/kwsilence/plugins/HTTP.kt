@@ -2,11 +2,11 @@ package com.kwsilence.plugins
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.server.plugins.Compression
-import io.ktor.server.plugins.HttpsRedirect
-import io.ktor.server.plugins.deflate
-import io.ktor.server.plugins.gzip
-import io.ktor.server.plugins.minimumSize
+import io.ktor.server.plugins.compression.Compression
+import io.ktor.server.plugins.compression.deflate
+import io.ktor.server.plugins.compression.gzip
+import io.ktor.server.plugins.compression.minimumSize
+import io.ktor.server.plugins.httpsredirect.HttpsRedirect
 
 fun Application.configureHTTP() {
     install(Compression) {

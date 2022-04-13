@@ -18,7 +18,7 @@ import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.locations.get
-import io.ktor.server.plugins.StatusPages
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receiveOrNull
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondFile
@@ -127,13 +127,12 @@ fun Application.configureRouting() {
                 Json.encodeToString(result)
             }
         }
-
-        install(StatusPages) {
-            exception<ExceptionUtil.BaseException> { call, baseException ->
-                when (val message = baseException.message) {
-                    null -> call.respond(baseException.code)
-                    else -> call.respond(baseException.code, message)
-                }
+    }
+    install(StatusPages) {
+        exception<ExceptionUtil.BaseException> { call, baseException ->
+            when (val message = baseException.message) {
+                null -> call.respond(baseException.code)
+                else -> call.respond(baseException.code, message)
             }
         }
     }
