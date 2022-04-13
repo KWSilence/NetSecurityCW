@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.konan.properties.loadProperties
 val ktorVersion = "2.0.0"
 val kotlinVersion = "1.6.10"
 val logbackVersion = "1.2.11"
-val exposedVersion = "0.37.3"
+val exposedVersion = "0.38.1"
 val postgresVersion = "42.3.3"
 val jwtVersion = "0.11.2"
 
@@ -42,7 +42,6 @@ application {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
 
 buildConfig {
@@ -85,9 +84,10 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
 
-    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation(platform("org.jetbrains.exposed:exposed-bom:$exposedVersion"))
+    implementation("org.jetbrains.exposed", "exposed-core")
+    implementation("org.jetbrains.exposed", "exposed-dao")
+    implementation("org.jetbrains.exposed", "exposed-jdbc")
     implementation("org.postgresql:postgresql:$postgresVersion")
 
     implementation("io.jsonwebtoken:jjwt-api:$jwtVersion")
