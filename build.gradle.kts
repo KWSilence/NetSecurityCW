@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.konan.properties.loadProperties
 
 val ktorVersion = "2.0.0"
-val kotlinVersion = "1.6.10"
+val kotlinVersion = "1.6.20"
 val logbackVersion = "1.2.11"
 val exposedVersion = "0.38.1"
 val postgresVersion = "42.3.3"
