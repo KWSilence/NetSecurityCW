@@ -12,6 +12,7 @@ import com.kwsilence.service.data.ResponseDataUpdate
 import com.kwsilence.service.data.ResponseSyncData
 import com.kwsilence.service.data.SyncData
 import com.kwsilence.util.ExceptionUtil.throwBase
+import com.kwsilence.util.TokenUtil.toUUID
 import io.ktor.http.HttpStatusCode
 import java.util.Date
 import java.util.UUID
@@ -23,7 +24,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
 class MangaRepository {
-    fun update(userId: Int, data: List<DataUpdate>): List<ResponseDataUpdate> {
+    fun update(userId: UUID, data: List<DataUpdate>): List<ResponseDataUpdate> {
         val result = ArrayList<ResponseDataUpdate>()
         transaction {
             data.forEach { record ->
@@ -52,7 +53,7 @@ class MangaRepository {
         return result
     }
 
-    fun sync(userId: Int, data: SyncData): List<ResponseSyncData> {
+    fun sync(userId: UUID, data: SyncData): List<ResponseSyncData> {
         val result = ArrayList<ResponseSyncData>()
         val lastUpdate = data.lastUpdate
         transaction {
@@ -108,7 +109,7 @@ class MangaRepository {
             else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
         }
 
-    private fun UserCategoryTable.proceedTable(userId: Int, categoryUID: UUID, operation: Int) {
+    private fun UserCategoryTable.proceedTable(userId: UUID, categoryUID: UUID, operation: Int) {
         when (operation) {
             Operation.INS.id -> {
                 insert {
@@ -254,7 +255,7 @@ class MangaRepository {
             else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
         }
 
-    private fun getCategoryUpdates(userId: Int, lastUpdate: Long): List<ResponseSyncData> {
+    private fun getCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
         val result = ArrayList<ResponseSyncData>()
         (UserCategoryTable innerJoin CategoryTable).select {
             (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id)
@@ -273,7 +274,7 @@ class MangaRepository {
         return result
     }
 
-    private fun getMangaCategoryUpdates(userId: Int, lastUpdate: Long): List<ResponseSyncData> {
+    private fun getMangaCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
         val result = ArrayList<ResponseSyncData>()
         (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable).select {
             (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and
@@ -294,7 +295,7 @@ class MangaRepository {
         return result
     }
 
-    private fun getMangaUpdates(userId: Int, lastUpdate: Long): List<ResponseSyncData> {
+    private fun getMangaUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
         val result = ArrayList<ResponseSyncData>()
         (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin MangaTable).select {
             (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and
@@ -321,7 +322,7 @@ class MangaRepository {
         return result
     }
 
-    private fun getChapterUpdates(userId: Int, lastUpdate: Long): List<ResponseSyncData> {
+    private fun getChapterUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
         val result = ArrayList<ResponseSyncData>()
         (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin
                 MangaTable innerJoin ChapterTable).select {
@@ -373,7 +374,6 @@ class MangaRepository {
         }?.let { syncData -> add(syncData) }
     }
 
-    private fun String.toUUID(): UUID = UUID.fromString(this)
     private infix fun String.missing(field: String): Nothing =
         (HttpStatusCode.BadRequest to "$this: missing $field").throwBase()
 

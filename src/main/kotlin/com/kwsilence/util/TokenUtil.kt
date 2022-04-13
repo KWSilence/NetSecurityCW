@@ -3,7 +3,7 @@ package com.kwsilence.util
 import com.kwsilence.mserver.BuildConfig
 import com.kwsilence.service.data.UserTokenPair
 import com.kwsilence.util.ExceptionUtil.throwBase
-import io.jsonwebtoken.JwtParser
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
@@ -34,30 +34,22 @@ object TokenUtil {
             timeInMillis += TimeUnit.MILLISECONDS.convert(duration, unit)
         }.time
 
-    fun checkAuthToken(auth: String?, authKey: SecretKey = defaultAuthKey): JwtParser {
-        auth ?: HttpStatusCode.Unauthorized.throwBase()
-        return runCatching {
-            Jwts.parserBuilder().apply {
-                setSigningKey(authKey)
-            }.build().apply {
-                parse(auth)
-            }
-        }.getOrNull() ?: HttpStatusCode.Unauthorized.throwBase()
-    }
+    fun checkAuthToken(auth: String?, authKey: SecretKey = defaultAuthKey): Claims =
+        auth?.let {
+            runCatching {
+                Jwts.parserBuilder().apply { setSigningKey(authKey) }.build().parseClaimsJws(auth).body
+            }.getOrNull()
+        } ?: HttpStatusCode.Unauthorized.throwBase()
 
-    fun checkRefreshToken(refresh: String?, key: PublicKey = publicKey): JwtParser {
-        refresh ?: HttpStatusCode.BadRequest.throwBase()
-        return runCatching {
-            Jwts.parserBuilder().apply {
-                setSigningKey(key)
-            }.build().apply {
-                parse(refresh)
-            }
-        }.getOrNull() ?: HttpStatusCode.Forbidden.throwBase()
-    }
+    fun checkRefreshToken(refresh: String?, key: PublicKey = publicKey): Claims =
+        refresh?.let {
+            runCatching {
+                Jwts.parserBuilder().apply { setSigningKey(key) }.build().parseClaimsJws(refresh).body
+            }.getOrNull()
+        } ?: HttpStatusCode.Unauthorized.throwBase()
 
-    fun getTokenPair(userId: Int, authKey: SecretKey = defaultAuthKey): UserTokenPair {
-        val claims = mapOf("usr" to userId)
+    fun getTokenPair(userId: UUID, authKey: SecretKey = defaultAuthKey): UserTokenPair {
+        val claims = mapOf("usr" to userId.toString())
         val authToken = Jwts.builder().apply {
             addClaims(claims)
             setId(UUID.randomUUID().toString())
@@ -106,4 +98,6 @@ object TokenUtil {
         val ks = X509EncodedKeySpec(bytes)
         KeyFactory.getInstance("RSA").generatePublic(ks)
     }
+
+    fun String.toUUID(): UUID = UUID.fromString(this)
 }

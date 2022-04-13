@@ -24,7 +24,7 @@ class RegistrationService(private val repository: AuthRepository) {
         sendConfirmMessage(userId, email)
     }
 
-    private fun sendConfirmMessage(userId: Int, mail: String) {
+    private fun sendConfirmMessage(userId: UUID, mail: String) {
         CoroutineScope(Dispatchers.IO).launch {
             val confirmToken = UUID.randomUUID().toString()
             repository.setUserToken(userId, confirmToken, Tokens.CONFIRM)

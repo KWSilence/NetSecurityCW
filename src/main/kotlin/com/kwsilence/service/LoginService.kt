@@ -7,6 +7,7 @@ import com.kwsilence.service.data.UserCred
 import com.kwsilence.service.data.UserTokenPair
 import com.kwsilence.util.ExceptionUtil.throwBase
 import com.kwsilence.util.TokenUtil
+import com.kwsilence.util.TokenUtil.toUUID
 import io.ktor.http.HttpStatusCode
 
 class LoginService(private val repository: AuthRepository) {
@@ -28,7 +29,7 @@ class LoginService(private val repository: AuthRepository) {
     }
 
     fun refreshToken(refreshToken: String?): UserTokenPair {
-        val userId = TokenUtil.checkRefreshToken(refreshToken).parseClaimsJws(refreshToken).body["usr"] as? Int
+        val userId = (TokenUtil.checkRefreshToken(refreshToken)["usr"] as? String)?.toUUID()
         userId ?: HttpStatusCode.Unauthorized.throwBase()
         val tokenId = repository.getUserTokenId(userId, refreshToken!!, Tokens.REFRESH)
         tokenId ?: HttpStatusCode.NotFound.throwBase()

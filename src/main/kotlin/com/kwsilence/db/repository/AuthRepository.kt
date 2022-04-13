@@ -4,6 +4,7 @@ import com.kwsilence.db.Tokens
 import com.kwsilence.db.model.User
 import com.kwsilence.db.table.auth.UserTable
 import com.kwsilence.db.table.auth.UserTokenTable
+import java.util.UUID
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -19,10 +20,10 @@ class AuthRepository {
             }
         }
 
-    fun getUserIdByMail(email: String?): Int? =
+    fun getUserIdByMail(email: String?): UUID? =
         getUserByMail(email)?.id?.value
 
-    fun createUser(email: String, pass: String): Int =
+    fun createUser(email: String, pass: String): UUID =
         transaction {
             User.new {
                 mail = email
@@ -30,14 +31,14 @@ class AuthRepository {
             }.id.value
         }
 
-    fun updateUser(userId: Int, pass: String? = null, confirmed: Boolean? = null) {
+    fun updateUser(userId: UUID, pass: String? = null, confirmed: Boolean? = null) {
         transaction {
             pass?.let { User[userId].password = it }
             confirmed?.let { User[userId].isConfirmed = it }
         }
     }
 
-    fun getUserTokenId(userId: Int, token: String, type: Tokens): Int? =
+    fun getUserTokenId(userId: UUID, token: String, type: Tokens): Int? =
         transaction {
             UserTokenTable.select {
                 UserTokenTable.run {
@@ -46,7 +47,7 @@ class AuthRepository {
             }.firstOrNull()?.get(UserTokenTable.id)?.value
         }
 
-    fun getUserTokens(userId: Int, type: Tokens): List<String> =
+    fun getUserTokens(userId: UUID, type: Tokens): List<String> =
         ArrayList<String>().apply {
             transaction {
                 UserTokenTable.select {
@@ -57,7 +58,7 @@ class AuthRepository {
             }
         }
 
-    fun getUserIdByToken(token: String, type: Tokens): Int? =
+    fun getUserIdByToken(token: String, type: Tokens): UUID? =
         transaction {
             UserTokenTable.select {
                 (UserTokenTable.token eq token) and (UserTokenTable.type eq type.id)
@@ -72,7 +73,7 @@ class AuthRepository {
         }
     }
 
-    fun setUserToken(userId: Int, token: String, type: Tokens) {
+    fun setUserToken(userId: UUID, token: String, type: Tokens) {
         transaction {
             UserTokenTable.insert {
                 it[this.userId] = userId
@@ -82,7 +83,7 @@ class AuthRepository {
         }
     }
 
-    fun resetUserTokens(userId: Int, types: List<Tokens>) {
+    fun resetUserTokens(userId: UUID, types: List<Tokens>) {
         transaction {
             types.forEach { type ->
                 UserTokenTable.deleteWhere {

@@ -42,7 +42,7 @@ class ResetPasswordService(private val repository: AuthRepository) {
         }
     }
 
-    fun findUserId(token: String?): Int =
+    fun findUserId(token: String?): UUID =
         token?.let {
             repository.getUserIdByToken(token, Tokens.RESET)
         } ?: HttpStatusCode.NotFound.throwBase()
