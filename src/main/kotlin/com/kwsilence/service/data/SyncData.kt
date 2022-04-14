@@ -9,9 +9,8 @@ data class SyncData(
 )
 
 @Serializable
-data class ResponseSyncData(
+data class ResponseSyncDataItem(
     val uid: String,
-    val tb: String,
     val op: Int,
     val data: Map<String, String?>? = null
 )

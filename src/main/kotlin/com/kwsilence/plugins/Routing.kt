@@ -56,8 +56,9 @@ fun Application.configureRouting() {
             }
         }
 
-        get(ApiHelper.RESET_PASS_PATH) {
-            resetPasswordService.sendResetPasswordMail(call.parameters["mail"])
+        post(ApiHelper.RESET_PASS_PATH) {
+            val mail = call.receiveOrNull<Map<String,String>>()?.get("mail")
+            resetPasswordService.sendResetPasswordMail(mail)
             call.respond(HttpStatusCode.OK, "password reset link sent")
         }
 
@@ -71,8 +72,9 @@ fun Application.configureRouting() {
             call.respond(HttpStatusCode.OK, "password successfully changed")
         }
 
-        get("/refresh") {
-            val tokenPair = loginService.refreshToken(call.request.headers["Authorization"])
+        post("/refresh") {
+            val refreshToken = call.receiveOrNull<Map<String, String>>()?.get("refreshToken")
+            val tokenPair = loginService.refreshToken(refreshToken)
             call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
                 Json.encodeToString(tokenPair)
             }
@@ -86,8 +88,9 @@ fun Application.configureRouting() {
             } ?: HttpStatusCode.NotFound.throwBase()
         }
 
-        get(ApiHelper.CONFIRM_PATH) {
-            registrationService.sendConfirmMessage(call.parameters["mail"])
+        post(ApiHelper.CONFIRM_PATH) {
+            val mail = call.receiveOrNull<Map<String,String>>()?.get("mail")
+            registrationService.sendConfirmMessage(mail)
             call.respond(HttpStatusCode.OK, "confirm mail link sent")
         }
 

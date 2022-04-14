@@ -1,6 +1,7 @@
 package com.kwsilence.db.repository
 
 import com.kwsilence.db.Operation
+import com.kwsilence.db.model.tableKeyOrder
 import com.kwsilence.db.model.tables
 import com.kwsilence.db.table.manga.CategoryTable
 import com.kwsilence.db.table.manga.ChapterTable
@@ -8,8 +9,9 @@ import com.kwsilence.db.table.manga.MangaCategoryTable
 import com.kwsilence.db.table.manga.MangaTable
 import com.kwsilence.db.table.manga.UserCategoryTable
 import com.kwsilence.service.data.DataUpdate
-import com.kwsilence.service.data.ResponseDataUpdate
-import com.kwsilence.service.data.ResponseSyncData
+import com.kwsilence.service.data.DataUpdateItem
+import com.kwsilence.service.data.ResponseDataUpdateItem
+import com.kwsilence.service.data.ResponseSyncDataItem
 import com.kwsilence.service.data.SyncData
 import com.kwsilence.util.ExceptionUtil.throwBase
 import com.kwsilence.util.TokenUtil.toUUID
@@ -24,91 +26,87 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
 class MangaRepository {
-    fun update(userId: UUID, data: List<DataUpdate>): List<ResponseDataUpdate> {
-        val result = ArrayList<ResponseDataUpdate>()
+    fun update(userId: UUID, data: DataUpdate): Map<String, List<ResponseDataUpdateItem>> {
+        val result = HashMap<String, ArrayList<ResponseDataUpdateItem>>().apply {
+            tableKeyOrder.forEach { tableName -> put(tableName, ArrayList()) }
+        }
         transaction {
-            data.forEach { record ->
-                when (val table = tables[record.tb]) {
-                    is CategoryTable -> {
-                        table.proceedTable(record)?.also { stringUID ->
-                            UserCategoryTable.proceedTable(userId, stringUID.toUUID(), record.op)
+            tableKeyOrder.forEach { key ->
+                data[key]?.forEach { updateItem ->
+                    val record = key to updateItem
+                    when (val table = tables[key]) {
+                        is CategoryTable -> {
+                            table.proceedTable(record)?.also { stringUID ->
+                                UserCategoryTable.proceedTable(userId, stringUID.toUUID(), record.op)
+                            }
                         }
+                        is ChapterTable -> {
+                            val mangaUID = result getMangaId updateItem
+                            table.proceedTable(record, mangaUID)
+                        }
+                        is MangaCategoryTable -> {
+                            val mangaUID = result getMangaId updateItem
+                            val categoryUID = result getCategoryId updateItem
+                            table.proceedTable(record, mangaUID, categoryUID)
+                        }
+                        is MangaTable -> table.proceedTable(record)
+                        else -> (HttpStatusCode.Conflict to "invalid table '$key'").throwBase()
+                    }?.let { uid ->
+                        result[key]?.add(ResponseDataUpdateItem(uid = uid, lid = updateItem.lid))
                     }
-                    is ChapterTable -> {
-                        val mangaUID = result getMangaId record
-                        table.proceedTable(record, mangaUID)
-                    }
-                    is MangaCategoryTable -> {
-                        val mangaUID = result getMangaId record
-                        val categoryUID = result getCategoryId record
-                        table.proceedTable(record, mangaUID, categoryUID)
-                    }
-                    is MangaTable -> table.proceedTable(record)
-                    else -> (HttpStatusCode.Conflict to "invalid table '${record.tb}'").throwBase()
-                }?.let { uid ->
-                    result.add(ResponseDataUpdate(uid = uid, lid = record.lid, tb = record.tb))
                 }
             }
         }
         return result
     }
 
-    fun sync(userId: UUID, data: SyncData): List<ResponseSyncData> {
-        val result = ArrayList<ResponseSyncData>()
-        val lastUpdate = data.lastUpdate
+    fun sync(userId: UUID, data: SyncData): Map<String, List<ResponseSyncDataItem>> =
         transaction {
-            result.apply {
-                addAll(getCategoryUpdates(userId, lastUpdate))
-                addAll(getMangaUpdates(userId, lastUpdate))
-                addAll(getMangaCategoryUpdates(userId, lastUpdate))
-                addAll(getChapterUpdates(userId, lastUpdate))
-            }
-        }
-        return result
-    }
-
-
-    private infix fun List<ResponseDataUpdate>.getMangaId(record: DataUpdate): String? =
-        record.data["_mangaId"]?.toInt()?.let { mangaId ->
-            find { it.lid == mangaId && it.tb == "manga" }?.uid
+            val lastUpdate = data.lastUpdate
+            mapOf(
+                "category" to getCategoryUpdates(userId, lastUpdate),
+                "manga" to getMangaUpdates(userId, lastUpdate),
+                "manga_category" to getMangaCategoryUpdates(userId, lastUpdate),
+                "chapter" to getChapterUpdates(userId, lastUpdate)
+            )
         }
 
-    private infix fun List<ResponseDataUpdate>.getCategoryId(record: DataUpdate): String? =
-        record.data["_categoryId"]?.toInt()?.let { categoryId ->
-            find { it.lid == categoryId && it.tb == "category" }?.uid
-        }
+    private infix fun Map<String, List<ResponseDataUpdateItem>>.getMangaId(record: DataUpdateItem): String? =
+        record.data["_mangaId"]?.toInt()?.let { mangaId -> get("manga")?.find { it.lid == mangaId }?.uid }
 
-    private fun CategoryTable.proceedTable(record: DataUpdate): String? =
-        when (record.op) {
-            Operation.UPD.id -> {
-                record.uid?.also { uid ->
-                    update({ id eq uid.toUUID() }) {
-                        it[name] = record.getOrMissing("name")
-                        it[updateDate] = updateTime
-                        it[operation] = Operation.UPD.id
-                    }
-                }
-            }
-            Operation.INS.id -> {
-                insertAndGetId {
+    private infix fun Map<String, List<ResponseDataUpdateItem>>.getCategoryId(record: DataUpdateItem): String? =
+        record.data["_categoryId"]?.toInt()?.let { categoryId -> get("category")?.find { it.lid == categoryId }?.uid }
+
+    private fun CategoryTable.proceedTable(record: Pair<String, DataUpdateItem>): String? = when (record.op) {
+        Operation.UPD.id -> {
+            record.uid?.also { uid ->
+                update({ id eq uid.toUUID() }) {
                     it[name] = record.getOrMissing("name")
-                    updateTime.let { date ->
-                        it[updateDate] = date
-                        it[createDate] = date
-                    }
-                    it[operation] = Operation.INS.id
-                }.value.toString()
-            }
-            Operation.DEL.id -> {
-                record.uid?.also { uid ->
-                    update({ id eq uid.toUUID() }) {
-                        it[updateDate] = updateTime
-                        it[operation] = Operation.DEL.id
-                    }
+                    it[updateDate] = updateTime
+                    it[operation] = record.op
                 }
             }
-            else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
         }
+        Operation.INS.id -> {
+            insertAndGetId {
+                it[name] = record.getOrMissing("name")
+                updateTime.let { date ->
+                    it[updateDate] = date
+                    it[createDate] = date
+                }
+                it[operation] = record.op
+            }.value.toString()
+        }
+        Operation.DEL.id -> {
+            record.uid?.also { uid ->
+                update({ id eq uid.toUUID() }) {
+                    it[updateDate] = updateTime
+                    it[operation] = record.op
+                }
+            }
+        }
+        else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
+    }
 
     private fun UserCategoryTable.proceedTable(userId: UUID, categoryUID: UUID, operation: Int) {
         when (operation) {
@@ -120,62 +118,69 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
-                    it[UserCategoryTable.operation] = Operation.INS.id
+                    it[UserCategoryTable.operation] = operation
                 }
             }
             Operation.DEL.id -> {
                 update({ categoryId eq categoryUID }) {
                     it[updateDate] = updateTime
-                    it[UserCategoryTable.operation] = Operation.DEL.id
+                    it[UserCategoryTable.operation] = operation
                 }
             }
         }
     }
 
-    private fun ChapterTable.proceedTable(record: DataUpdate, mangaUID: String? = null): String? =
+    private fun ChapterTable.proceedTable(record: Pair<String, DataUpdateItem>, mangaUID: String? = null): String? =
         when (record.op) {
             Operation.UPD.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[name] = record.getOrMissing("name")
-                        it[url] = record.getOrMissing("url")
-                        it[isRead] = record.getOrMissing("isRead").toBoolean()
-                        it[number] = record.getOrMissing("number").toInt()
-                        it[lastPageRead] = record.getOrMissing("lastPageRead").toInt()
-                        it[uploadDate] = record.getOrMissing("uploadDate").toLong()
+                        record.run {
+                            it[name] = getOrMissing("name")
+                            it[url] = getOrMissing("url")
+                            it[isRead] = getOrMissing("isRead").toBoolean()
+                            it[number] = getOrMissing("number").toInt()
+                            it[lastPageRead] = getOrMissing("lastPageRead").toInt()
+                            it[uploadDate] = getOrMissing("uploadDate").toLong()
+                        }
                         it[updateDate] = updateTime
-                        it[operation] = Operation.UPD.id
+                        it[operation] = record.op
                     }
                 }
             }
             Operation.INS.id -> {
                 insertAndGetId {
-                    it[name] = record.getOrMissing("name")
-                    it[url] = record.getOrMissing("url")
-                    it[mangaId] = record.getOrMissing("mangaId", mangaUID).toUUID()
-                    it[isRead] = record.getOrMissing("isRead").toBoolean()
-                    it[number] = record.getOrMissing("number").toInt()
-                    it[lastPageRead] = record.getOrMissing("lastPageRead").toInt()
-                    it[uploadDate] = record.getOrMissing("uploadDate").toLong()
+                    record.run {
+                        it[name] = getOrMissing("name")
+                        it[url] = getOrMissing("url")
+                        it[mangaId] = getOrMissing("mangaId", mangaUID).toUUID()
+                        it[isRead] = getOrMissing("isRead").toBoolean()
+                        it[number] = getOrMissing("number").toInt()
+                        it[lastPageRead] = getOrMissing("lastPageRead").toInt()
+                        it[uploadDate] = getOrMissing("uploadDate").toLong()
+                    }
                     updateTime.let { date ->
                         it[updateDate] = date
                         it[createDate] = date
                     }
-                    it[operation] = Operation.INS.id
+                    it[operation] = record.op
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
                         it[updateDate] = updateTime
-                        it[operation] = Operation.DEL.id
+                        it[operation] = record.op
                     }
                 }
             }
             else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
         }
 
-    private fun MangaCategoryTable.proceedTable(record: DataUpdate, mangaUID: String?, categoryUID: String?): String? =
+
+    private fun MangaCategoryTable.proceedTable(
+        record: Pair<String, DataUpdateItem>, mangaUID: String?, categoryUID: String?
+    ): String? =
         when (record.op) {
             Operation.UPD.id -> {
                 record.uid?.also { uid ->
@@ -183,7 +188,7 @@ class MangaRepository {
                         it[mangaId] = record.getOrMissing("mangaId", mangaUID).toUUID()
                         it[categoryId] = record.getOrMissing("categoryId", categoryUID).toUUID()
                         it[updateDate] = updateTime
-                        it[operation] = Operation.UPD.id
+                        it[operation] = record.op
                     }
                 }
             }
@@ -195,29 +200,29 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
-                    it[operation] = Operation.INS.id
+                    it[operation] = record.op
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
                         it[updateDate] = updateTime
-                        it[operation] = Operation.DEL.id
+                        it[operation] = record.op
                     }
                 }
             }
             else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
         }
 
-    private fun MangaTable.proceedTable(record: DataUpdate): String? =
+    private fun MangaTable.proceedTable(record: Pair<String, DataUpdateItem>): String? =
         when (record.op) {
             Operation.UPD.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[title] = record.getOrMissing("title")
-                        it[sourceId] = record.getOrMissing("sourceId").toInt()
-                        it[url] = record.getOrMissing("url")
-                        record.data.run {
+                        record.run {
+                            it[title] = getOrMissing("title")
+                            it[sourceId] = getOrMissing("sourceId").toInt()
+                            it[url] = getOrMissing("url")
                             it[artist] = get("artist")
                             it[author] = get("author")
                             it[description] = get("description")
@@ -225,16 +230,16 @@ class MangaRepository {
                             it[coverUrl] = get("coverUrl")
                         }
                         it[updateDate] = updateTime
-                        it[operation] = Operation.UPD.id
+                        it[operation] = record.op
                     }
                 }
             }
             Operation.INS.id -> {
                 insertAndGetId {
-                    it[title] = record.getOrMissing("title")
-                    it[sourceId] = record.getOrMissing("sourceId").toInt()
-                    it[url] = record.getOrMissing("url")
-                    record.data.run {
+                    record.run {
+                        it[title] = getOrMissing("title")
+                        it[sourceId] = getOrMissing("sourceId").toInt()
+                        it[url] = getOrMissing("url")
                         it[artist] = get("artist")
                         it[author] = get("author")
                         it[description] = get("description")
@@ -245,22 +250,22 @@ class MangaRepository {
                         it[updateDate] = date
                         it[createDate] = date
                     }
-                    it[operation] = Operation.INS.id
+                    it[operation] = record.op
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
                         it[updateDate] = updateTime
-                        it[operation] = Operation.DEL.id
+                        it[operation] = record.op
                     }
                 }
             }
             else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
         }
 
-    private fun getCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
-        val result = ArrayList<ResponseSyncData>()
+    private fun getCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+        val result = ArrayList<ResponseSyncDataItem>()
         (UserCategoryTable innerJoin CategoryTable).select {
             (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id)
         }.forEach {
@@ -268,21 +273,18 @@ class MangaRepository {
             val updateDate = it[CategoryTable.updateDate]
             val operation = it[CategoryTable.operation].value
             val updateMap = mapOf(
-                "name" to it[CategoryTable.name],
-                "updateDate" to it[CategoryTable.updateDate].toString()
+                "name" to it[CategoryTable.name], "updateDate" to it[CategoryTable.updateDate].toString()
             )
             val uid = it[CategoryTable.id].value.toString()
-            val table = "category"
-            result.change(uid, table, lastUpdate, createDate, updateDate, operation, updateMap)
+            result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
         }
         return result
     }
 
-    private fun getMangaCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
-        val result = ArrayList<ResponseSyncData>()
+    private fun getMangaCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+        val result = ArrayList<ResponseSyncDataItem>()
         (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable).select {
-            (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and
-                    (MangaCategoryTable.categoryId eq CategoryTable.id)
+            (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and (MangaCategoryTable.categoryId eq CategoryTable.id)
         }.forEach {
             val createDate = it[MangaCategoryTable.createDate]
             val updateDate = it[MangaCategoryTable.updateDate]
@@ -293,17 +295,15 @@ class MangaRepository {
                 "updateDate" to it[MangaCategoryTable.updateDate].toString()
             )
             val uid = it[MangaCategoryTable.id].value.toString()
-            val table = "manga_category"
-            result.change(uid, table, lastUpdate, createDate, updateDate, operation, updateMap)
+            result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
         }
         return result
     }
 
-    private fun getMangaUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
-        val result = ArrayList<ResponseSyncData>()
+    private fun getMangaUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+        val result = ArrayList<ResponseSyncDataItem>()
         (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin MangaTable).select {
-            (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and
-                    (MangaCategoryTable.categoryId eq CategoryTable.id) and (MangaTable.id eq MangaCategoryTable.mangaId)
+            (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and (MangaCategoryTable.categoryId eq CategoryTable.id) and (MangaTable.id eq MangaCategoryTable.mangaId)
         }.forEach {
             val createDate = it[MangaTable.createDate]
             val updateDate = it[MangaTable.updateDate]
@@ -320,20 +320,15 @@ class MangaRepository {
                 "updateDate" to it[MangaTable.updateDate].toString()
             )
             val uid = it[MangaTable.id].value.toString()
-            val table = "manga"
-            result.change(uid, table, lastUpdate, createDate, updateDate, operation, updateMap)
+            result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
         }
         return result
     }
 
-    private fun getChapterUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncData> {
-        val result = ArrayList<ResponseSyncData>()
-        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin
-                MangaTable innerJoin ChapterTable).select {
-            (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and
-                    (MangaCategoryTable.categoryId eq CategoryTable.id) and
-                    (MangaTable.id eq MangaCategoryTable.mangaId) and
-                    (ChapterTable.mangaId eq MangaTable.id)
+    private fun getChapterUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+        val result = ArrayList<ResponseSyncDataItem>()
+        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin MangaTable innerJoin ChapterTable).select {
+            (UserCategoryTable.userId eq userId) and (UserCategoryTable.categoryId eq CategoryTable.id) and (MangaCategoryTable.categoryId eq CategoryTable.id) and (MangaTable.id eq MangaCategoryTable.mangaId) and (ChapterTable.mangaId eq MangaTable.id)
         }.forEach {
             val createDate = it[ChapterTable.createDate]
             val updateDate = it[ChapterTable.updateDate]
@@ -349,15 +344,13 @@ class MangaRepository {
                 "updateDate" to it[ChapterTable.updateDate].toString()
             )
             val uid = it[ChapterTable.id].value.toString()
-            val table = "chapter"
-            result.change(uid, table, lastUpdate, createDate, updateDate, operation, updateMap)
+            result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
         }
         return result
     }
 
-    private fun ArrayList<ResponseSyncData>.change(
+    private fun ArrayList<ResponseSyncDataItem>.change(
         uid: String,
-        table: String,
         lastUpdate: Long,
         createDate: Long,
         updateDate: Long,
@@ -366,13 +359,13 @@ class MangaRepository {
     ) {
         when {
             createDate > lastUpdate && operation != Operation.DEL.id -> {
-                ResponseSyncData(uid = uid, tb = table, op = Operation.INS.id, data = updateMap)
+                ResponseSyncDataItem(uid = uid, op = Operation.INS.id, data = updateMap)
             }
             updateDate > lastUpdate && operation == Operation.UPD.id -> {
-                ResponseSyncData(uid = uid, tb = table, op = Operation.UPD.id, data = updateMap)
+                ResponseSyncDataItem(uid = uid, op = Operation.UPD.id, data = updateMap)
             }
             updateDate > lastUpdate && operation == Operation.DEL.id -> {
-                ResponseSyncData(uid = uid, tb = table, op = Operation.DEL.id)
+                ResponseSyncDataItem(uid = uid, op = Operation.DEL.id)
             }
             else -> null
         }?.let { syncData -> add(syncData) }
@@ -381,8 +374,14 @@ class MangaRepository {
     private infix fun String.missing(field: String): Nothing =
         (HttpStatusCode.BadRequest to "$this: missing $field").throwBase()
 
-    private fun DataUpdate.getOrMissing(field: String, default: String? = null): String =
-        data[field] ?: default ?: (tb missing field)
+    private fun Pair<String, DataUpdateItem>.getOrMissing(field: String, default: String? = null): String =
+        get(field) ?: default ?: (first missing field)
+
+    private fun Pair<String, DataUpdateItem>.get(key: String): String? = second.data[key]
+
+    private val Pair<String, DataUpdateItem>.op: Int get() = second.op
+
+    private val Pair<String, DataUpdateItem>.uid: String? get() = second.uid
 
     private val updateTime get() = Date().time
 }
