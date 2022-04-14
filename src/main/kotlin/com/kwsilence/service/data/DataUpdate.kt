@@ -3,6 +3,7 @@ package com.kwsilence.service.data
 import kotlinx.serialization.Serializable
 
 typealias DataUpdate = Map<String, List<DataUpdateItem>?>
+typealias TableData = Pair<String, DataUpdateItem>
 
 @Serializable
 data class DataUpdateItem(
