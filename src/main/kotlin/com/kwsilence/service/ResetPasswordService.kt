@@ -16,9 +16,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class ResetPasswordService(private val repository: AuthRepository) {
-    fun sendResetPasswordMail(userMail: String?) {
+    fun sendResetPasswordMail(userMail: String?, checkConfirm: Boolean = true) {
         repository.getUserByMail(userMail)?.let { user ->
-            if (!user.isConfirmed) (HttpStatusCode.Conflict to "confirm mail before").throwBase()
+            if (checkConfirm && !user.isConfirmed) (HttpStatusCode.Conflict to "confirm mail before").throwBase()
             val resetToken = UUID.randomUUID().toString()
             repository.setUserToken(user.id.value, resetToken, Tokens.RESET)
             CoroutineScope(Dispatchers.IO).launch {

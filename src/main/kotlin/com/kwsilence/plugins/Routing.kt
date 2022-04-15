@@ -2,6 +2,7 @@ package com.kwsilence.plugins
 
 import com.kwsilence.db.repository.AuthRepository
 import com.kwsilence.db.repository.MangaRepository
+import com.kwsilence.mserver.BuildConfig
 import com.kwsilence.service.LoginService
 import com.kwsilence.service.RegistrationService
 import com.kwsilence.service.ResetPasswordService
@@ -50,7 +51,7 @@ fun Application.configureRouting() {
         }
 
         post("/login") {
-            val tokenPair = loginService.login(call.receiveOrNull())
+            val tokenPair = loginService.login(call.receiveOrNull(), !BuildConfig.debug)
             call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
                 Json.encodeToString(tokenPair)
             }
@@ -58,7 +59,7 @@ fun Application.configureRouting() {
 
         post(ApiHelper.RESET_PASS_PATH) {
             val mail = call.receiveOrNull<Map<String,String>>()?.get("mail")
-            resetPasswordService.sendResetPasswordMail(mail)
+            resetPasswordService.sendResetPasswordMail(mail, !BuildConfig.debug)
             call.respond(HttpStatusCode.OK, "password reset link sent")
         }
 
