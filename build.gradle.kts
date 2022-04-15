@@ -8,6 +8,7 @@ val postgresVersion = "42.3.3"
 val jwtVersion = "0.11.2"
 
 val debug: String by project
+val use_confirm: String by project
 val baseUrl: String by project
 
 val secretProperties = loadProperties("${projectDir.path}/secrets/secret.properties")
@@ -46,6 +47,7 @@ repositories {
 
 buildConfig {
     buildConfigField("Boolean", "debug", debug)
+    buildConfigField("Boolean", "useConfirm", use_confirm)
     buildConfigField("String", "baseUrl", "\"$baseUrl\"")
 
     buildConfigField("String", "emailName", "\"$emailName\"")

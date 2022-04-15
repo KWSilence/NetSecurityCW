@@ -51,7 +51,7 @@ fun Application.configureRouting() {
         }
 
         post("/login") {
-            val tokenPair = loginService.login(call.receiveOrNull(), !BuildConfig.debug)
+            val tokenPair = loginService.login(call.receiveOrNull(), BuildConfig.useConfirm)
             call.respondText(ContentType.Application.Json, HttpStatusCode.OK) {
                 Json.encodeToString(tokenPair)
             }
@@ -59,7 +59,7 @@ fun Application.configureRouting() {
 
         post(ApiHelper.RESET_PASS_PATH) {
             val mail = call.receiveOrNull<Map<String,String>>()?.get("mail")
-            resetPasswordService.sendResetPasswordMail(mail, !BuildConfig.debug)
+            resetPasswordService.sendResetPasswordMail(mail, BuildConfig.useConfirm)
             call.respond(HttpStatusCode.OK, "password reset link sent")
         }
 
