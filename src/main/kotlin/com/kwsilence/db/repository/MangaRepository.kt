@@ -1,5 +1,6 @@
 package com.kwsilence.db.repository
 
+import com.kwsilence.db.MangaStatus
 import com.kwsilence.db.Operation
 import com.kwsilence.db.model.tableKeyOrder
 import com.kwsilence.db.model.tables
@@ -223,7 +224,7 @@ class MangaRepository {
                             it[title] = getOrMissing("title")
                             it[sourceId] = getOrMissing("sourceId").toInt()
                             it[url] = getOrMissing("url")
-                            it[artist] = get("artist")
+                            it[status] = get("status")?.toInt() ?: MangaStatus.UNKNOWN.id
                             it[author] = get("author")
                             it[description] = get("description")
                             it[genres] = get("genres")
@@ -240,7 +241,7 @@ class MangaRepository {
                         it[title] = getOrMissing("title")
                         it[sourceId] = getOrMissing("sourceId").toInt()
                         it[url] = getOrMissing("url")
-                        it[artist] = get("artist")
+                        it[status] = get("status")?.toInt() ?: MangaStatus.UNKNOWN.id
                         it[author] = get("author")
                         it[description] = get("description")
                         it[genres] = get("genres")
@@ -312,7 +313,7 @@ class MangaRepository {
                 "title" to it[MangaTable.title],
                 "categoryId" to it[MangaTable.sourceId].toString(),
                 "url" to it[MangaTable.url],
-                "artist" to it[MangaTable.artist],
+                "status" to it[MangaTable.status].value.toString(),
                 "author" to it[MangaTable.author],
                 "description" to it[MangaTable.description],
                 "genres" to it[MangaTable.genres],
