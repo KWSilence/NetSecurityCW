@@ -9,7 +9,7 @@ object ChapterTable : UUIDTable("chapter") {
     val mangaId = reference("mangaId", MangaTable, onDelete = ReferenceOption.CASCADE)
     val url = varchar("url", 300)
     val isRead = bool("read")
-    val number = integer("number")
+    val number = float("number")
     val lastPageRead = integer("last_page_read")
     val uploadDate = long("upload_date")
     val updateDate = long("update_date")

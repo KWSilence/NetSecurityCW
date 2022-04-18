@@ -140,7 +140,7 @@ class MangaRepository {
                             it[name] = getOrMissing("name")
                             it[url] = getOrMissing("url")
                             it[isRead] = getOrMissing("isRead").toBoolean()
-                            it[number] = getOrMissing("number").toInt()
+                            it[number] = getOrMissing("number").toFloat()
                             it[lastPageRead] = getOrMissing("lastPageRead").toInt()
                             it[uploadDate] = getOrMissing("uploadDate").toLong()
                         }
@@ -156,7 +156,7 @@ class MangaRepository {
                         it[url] = getOrMissing("url")
                         it[mangaId] = getOrMissing("mangaId", mangaUID).toUUID()
                         it[isRead] = getOrMissing("isRead").toBoolean()
-                        it[number] = getOrMissing("number").toInt()
+                        it[number] = getOrMissing("number").toFloat()
                         it[lastPageRead] = getOrMissing("lastPageRead").toInt()
                         it[uploadDate] = getOrMissing("uploadDate").toLong()
                     }
@@ -222,7 +222,7 @@ class MangaRepository {
                     update({ id eq uid.toUUID() }) {
                         record.run {
                             it[title] = getOrMissing("title")
-                            it[sourceId] = getOrMissing("sourceId").toInt()
+                            it[sourceId] = getOrMissing("sourceId").toLong()
                             it[url] = getOrMissing("url")
                             it[status] = get("status")?.toInt() ?: MangaStatus.UNKNOWN.id
                             it[author] = get("author")
@@ -239,7 +239,7 @@ class MangaRepository {
                 insertAndGetId {
                     record.run {
                         it[title] = getOrMissing("title")
-                        it[sourceId] = getOrMissing("sourceId").toInt()
+                        it[sourceId] = getOrMissing("sourceId").toLong()
                         it[url] = getOrMissing("url")
                         it[status] = get("status")?.toInt() ?: MangaStatus.UNKNOWN.id
                         it[author] = get("author")
@@ -311,7 +311,7 @@ class MangaRepository {
             val operation = it[MangaTable.operation].value
             val updateMap = mapOf(
                 "title" to it[MangaTable.title],
-                "categoryId" to it[MangaTable.sourceId].toString(),
+                "sourceId" to it[MangaTable.sourceId].toString(),
                 "url" to it[MangaTable.url],
                 "status" to it[MangaTable.status].value.toString(),
                 "author" to it[MangaTable.author],
