@@ -6,12 +6,13 @@ import org.jetbrains.exposed.sql.ReferenceOption
 
 object ChapterTable : UUIDTable("chapter") {
     val name = varchar("name", 300)
-    val mangaId = reference("mangaId", MangaTable, onDelete = ReferenceOption.CASCADE)
+    val mangaId = reference("manga_id", MangaTable, onDelete = ReferenceOption.CASCADE)
     val url = varchar("url", 300)
     val isRead = bool("read")
     val number = float("number")
     val lastPageRead = integer("last_page_read")
     val uploadDate = long("upload_date")
+    val lastModified = long("last_modified")
     val updateDate = long("update_date")
     val createDate = long("create_date").default(Date().time)
     val operation = reference("operation", OperationTypeTable)

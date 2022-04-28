@@ -10,6 +10,7 @@ data class DataUpdateItem(
     val uid: String? = null,
     val lid: Int,
     val op: Int,
+    val update: Long,
     val data: Map<String, String?> = mapOf()
 )
 

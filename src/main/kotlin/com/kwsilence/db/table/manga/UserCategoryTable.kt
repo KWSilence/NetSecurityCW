@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.ReferenceOption
 object UserCategoryTable : UUIDTable("user_category") {
     val userId = reference("user_id", UserTable, onDelete = ReferenceOption.CASCADE)
     val categoryId = reference("category_id", CategoryTable, onDelete = ReferenceOption.CASCADE)
+    val lastModified = long("last_modified")
     val updateDate = long("update_date")
     val createDate = long("create_date").default(Date().time)
     val operation = reference("operation", OperationTypeTable)

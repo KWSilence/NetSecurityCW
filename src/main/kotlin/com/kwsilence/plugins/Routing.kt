@@ -1,7 +1,7 @@
 package com.kwsilence.plugins
 
 import com.kwsilence.db.repository.AuthRepository
-import com.kwsilence.db.repository.MangaRepository
+import com.kwsilence.db.repository.SyncRepository
 import com.kwsilence.mserver.BuildConfig
 import com.kwsilence.service.LoginService
 import com.kwsilence.service.RegistrationService
@@ -11,6 +11,7 @@ import com.kwsilence.util.ApiHelper
 import com.kwsilence.util.ExceptionUtil
 import com.kwsilence.util.ExceptionUtil.throwBase
 import com.kwsilence.util.FileUtil
+import com.kwsilence.util.LogUtil
 import com.kwsilence.util.TokenUtil
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -34,11 +35,11 @@ import kotlinx.serialization.json.Json
 @KtorExperimentalLocationsAPI
 fun Application.configureRouting() {
     val authRepository = AuthRepository()
-    val mangaRepository = MangaRepository()
+    val syncRepository = SyncRepository()
     val loginService = LoginService(authRepository)
     val registrationService = RegistrationService(authRepository)
     val resetPasswordService = ResetPasswordService(authRepository)
-    val syncService = SyncService(mangaRepository)
+    val syncService = SyncService(syncRepository)
 
     routing {
         get("/") {
@@ -136,7 +137,10 @@ fun Application.configureRouting() {
         exception<ExceptionUtil.BaseException> { call, baseException ->
             when (val message = baseException.message) {
                 null -> call.respond(baseException.code)
-                else -> call.respond(baseException.code, message)
+                else -> {
+                    LogUtil.error("ERROR", baseException)
+                    call.respond(baseException.code, message)
+                }
             }
         }
     }

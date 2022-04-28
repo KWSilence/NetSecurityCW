@@ -8,6 +8,7 @@ object LogUtil {
     private var logger: Logger? = null
     fun Application.setLogger() { logger = log }
     fun error(message: String) = logger?.error(message)
+    fun error(message: String, exception: Exception) = logger?.error(message, exception)
     fun info(message: String) = logger?.info(message)
     fun debug(message: String) = logger?.debug(message)
 }

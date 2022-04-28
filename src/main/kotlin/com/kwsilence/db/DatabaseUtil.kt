@@ -6,7 +6,6 @@ import com.kwsilence.db.table.auth.UserTokenTable
 import com.kwsilence.db.table.manga.CategoryTable
 import com.kwsilence.db.table.manga.ChapterTable
 import com.kwsilence.db.table.manga.MangaCategoryTable
-import com.kwsilence.db.table.manga.MangaStatusTypeTable
 import com.kwsilence.db.table.manga.MangaTable
 import com.kwsilence.db.table.manga.OperationTypeTable
 import com.kwsilence.db.table.manga.UserCategoryTable
@@ -44,8 +43,7 @@ object DatabaseUtil {
                 CategoryTable,
                 MangaTable,
                 MangaCategoryTable,
-                ChapterTable,
-                MangaStatusTypeTable
+                ChapterTable
             )
             Tokens.values().forEach { link ->
                 TokenTypeTable.insertIgnore {
@@ -57,12 +55,6 @@ object DatabaseUtil {
                 OperationTypeTable.insertIgnore {
                     it[id] = operation.id
                     it[type] = operation.type
-                }
-            }
-            MangaStatus.values().forEach { status ->
-                MangaStatusTypeTable.insertIgnore {
-                    it[id] = status.id
-                    it[type] = status.type
                 }
             }
         }
