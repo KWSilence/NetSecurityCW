@@ -1,6 +1,5 @@
 package com.kwsilence.db.table.manga
 
-import java.util.Date
 import org.jetbrains.exposed.dao.id.UUIDTable
 
 object MangaTable : UUIDTable("manga") {
@@ -10,6 +9,5 @@ object MangaTable : UUIDTable("manga") {
     val coverUrl = varchar("cover_url", 300).nullable()
     val lastModified = long("last_modified")
     val updateDate = long("update_date")
-    val createDate = long("create_date").default(Date().time)
     val operation = reference("operation", OperationTypeTable)
 }

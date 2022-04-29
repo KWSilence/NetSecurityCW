@@ -63,10 +63,10 @@ class SyncRepository {
     fun sync(userId: UUID, data: SyncData): Map<String, List<ResponseSyncDataItem>> = transaction {
         val lastUpdate = data.lastUpdate
         HashMap<String, List<ResponseSyncDataItem>>().apply {
-            getCategoryUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("category", it) }
-            getMangaUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("manga", it) }
-            getMangaCategoryUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("manga_category", it) }
-            getChapterUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("chapter", it) }
+            CategoryTable.getUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("category", it) }
+            MangaTable.getUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("manga", it) }
+            MangaCategoryTable.getUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("manga_category", it) }
+            ChapterTable.getUpdates(userId, lastUpdate).takeIfNotEmpty()?.let { put("chapter", it) }
         }
     }
 
@@ -130,7 +130,7 @@ class SyncRepository {
                         update({ id eq uid.toUUID() }) {
                             it[name] = record.getOrMissing("name")
                             it[updateDate] = record.update
-                            it[lastModified] = updateTime
+                            it[lastModified] = currentTime
                             it[operation] = record.op
                         }
                     }
@@ -142,19 +142,16 @@ class SyncRepository {
                 record.uid!!.also { getCategory(it) }
             }.getOrNull() ?: insertAndGetId {
                 it[name] = record.getOrMissing("name")
-                record.update.let { date ->
-                    it[updateDate] = date
-                    it[createDate] = date
-                }
-                it[lastModified] = updateTime
+                it[updateDate] = record.update
+                it[lastModified] = currentTime
                 it[operation] = record.op
             }.value.toString()
         }
         Operation.DEL.id -> {
             record.uid?.also { uid ->
                 update({ id eq uid.toUUID() }) {
-                    it[updateDate] = updateTime
-                    it[lastModified] = updateTime
+                    it[updateDate] = currentTime
+                    it[lastModified] = currentTime
                     it[operation] = record.op
                 }
             }
@@ -170,18 +167,15 @@ class SyncRepository {
                 }.firstOrNull() ?: insert {
                     it[userId] = userUID
                     it[categoryId] = categoryUID
-                    updateTime.let { date ->
-                        it[updateDate] = date
-                        it[createDate] = date
-                    }
-                    it[lastModified] = updateTime
+                    it[updateDate] = currentTime
+                    it[lastModified] = currentTime
                     it[operation] = op
                 }
             }
             Operation.DEL.id -> {
                 update({ categoryId eq categoryUID }) {
-                    it[updateDate] = updateTime
-                    it[lastModified] = updateTime
+                    it[updateDate] = currentTime
+                    it[lastModified] = currentTime
                     it[operation] = op
                 }
             }
@@ -207,7 +201,7 @@ class SyncRepository {
                                     it[lastPageRead] = getOrMissing("lastPageRead").toInt()
                                     it[uploadDate] = getOrMissing("uploadDate").toLong()
                                     it[updateDate] = update
-                                    it[lastModified] = updateTime
+                                    it[lastModified] = currentTime
                                     it[operation] = op
                                 }
                             }
@@ -228,12 +222,12 @@ class SyncRepository {
                                     it[lastPageRead] = getOrMissing("lastPageRead").toInt()
                                     it[uploadDate] = getOrMissing("uploadDate").toLong()
                                     it[updateDate] = update
-                                    it[lastModified] = updateTime
+                                    it[lastModified] = currentTime
                                     it[operation] = Operation.UPD.id
                                 }
                             }
                         }
-                        chapter[id].toString()
+                        chapter[id].value.toString()
                     } ?: record.uid
                 }.getOrNull() ?: insertAndGetId {
                     record.run {
@@ -245,19 +239,16 @@ class SyncRepository {
                         it[lastPageRead] = getOrMissing("lastPageRead").toInt()
                         it[uploadDate] = getOrMissing("uploadDate").toLong()
                     }
-                    record.update.let { date ->
-                        it[updateDate] = date
-                        it[createDate] = date
-                    }
-                    it[lastModified] = updateTime
+                    it[updateDate] = record.update
+                    it[lastModified] = currentTime
                     it[operation] = record.op
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[updateDate] = updateTime
-                        it[lastModified] = updateTime
+                        it[updateDate] = currentTime
+                        it[lastModified] = currentTime
                         it[operation] = record.op
                     }
                 }
@@ -281,7 +272,7 @@ class SyncRepository {
                                 it[mangaId] = record.getOrMissing("mangaId", mangaUID).toUUID()
                                 it[categoryId] = record.getOrMissing("categoryId", categoryUID).toUUID()
                                 it[updateDate] = record.update
-                                it[lastModified] = updateTime
+                                it[lastModified] = currentTime
                                 it[operation] = record.op
                             }
                         }
@@ -296,28 +287,25 @@ class SyncRepository {
                                 it[mangaId] = record.getOrMissing("mangaId", mangaUID).toUUID()
                                 it[categoryId] = record.getOrMissing("categoryId", categoryUID).toUUID()
                                 it[updateDate] = record.update
-                                it[lastModified] = updateTime
+                                it[lastModified] = currentTime
                                 it[operation] = Operation.UPD.id
                             }
                         }
-                        mangaCategory[id].toString()
+                        mangaCategory[id].value.toString()
                     } ?: record.uid
                 }.getOrNull() ?: insertAndGetId {
                     it[mangaId] = record.getOrMissing("mangaId", mangaUID).toUUID()
                     it[categoryId] = record.getOrMissing("categoryId", categoryUID).toUUID()
-                    record.update.let { date ->
-                        it[updateDate] = date
-                        it[createDate] = date
-                    }
-                    it[lastModified] = updateTime
+                    it[updateDate] = record.update
+                    it[lastModified] = currentTime
                     it[operation] = record.op
                 }.value.toString()
             }
             Operation.DEL.id -> {
                 record.uid?.also { uid ->
                     update({ id eq uid.toUUID() }) {
-                        it[updateDate] = updateTime
-                        it[lastModified] = updateTime
+                        it[updateDate] = currentTime
+                        it[lastModified] = currentTime
                         it[operation] = record.op
                     }
                 }
@@ -338,7 +326,7 @@ class SyncRepository {
                                 it[coverUrl] = get("coverUrl")
                             }
                             it[updateDate] = record.update
-                            it[lastModified] = updateTime
+                            it[lastModified] = currentTime
                             it[operation] = record.op
                         }
                     }
@@ -357,11 +345,11 @@ class SyncRepository {
                                 it[coverUrl] = get("coverUrl")
                             }
                             it[updateDate] = record.update
-                            it[lastModified] = updateTime
+                            it[lastModified] = currentTime
                             it[operation] = Operation.UPD.id
                         }
                     }
-                    manga[id].toString()
+                    manga[id].value.toString()
                 } ?: record.uid
             }.getOrNull() ?: insertAndGetId {
                 record.run {
@@ -370,19 +358,16 @@ class SyncRepository {
                     it[url] = getOrMissing("url")
                     it[coverUrl] = get("coverUrl")
                 }
-                record.update.let { date ->
-                    it[updateDate] = date
-                    it[createDate] = date
-                }
-                it[lastModified] = updateTime
+                it[updateDate] = record.update
+                it[lastModified] = currentTime
                 it[operation] = record.op
             }.value.toString()
         }
         Operation.DEL.id -> {
             record.uid?.also { uid ->
                 update({ id eq uid.toUUID() }) {
-                    it[updateDate] = updateTime
-                    it[lastModified] = updateTime
+                    it[updateDate] = currentTime
+                    it[lastModified] = currentTime
                     it[operation] = record.op
                 }
             }
@@ -390,91 +375,88 @@ class SyncRepository {
         else -> (HttpStatusCode.Conflict to "invalid operation id '${record.op}'").throwBase()
     }
 
-    private fun getCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+    private fun CategoryTable.getUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
         val result = ArrayList<ResponseSyncDataItem>()
-        (UserCategoryTable innerJoin CategoryTable)
-            .slice(CategoryTable.columns)
-            .select { (UserCategoryTable.userId eq userId) and (CategoryTable.lastModified greater lastUpdate) }
+        (UserCategoryTable innerJoin this)
+            .slice(columns)
+            .select { (UserCategoryTable.userId eq userId) and (lastModified greater lastUpdate) }
             .withDistinct()
             .forEach {
-                val createDate = it[CategoryTable.createDate]
-                val updateDate = it[CategoryTable.lastModified]
-                val operation = it[CategoryTable.operation].value
+                val lastModified = it[lastModified]
+                val operation = it[operation].value
                 val updateMap = mapOf(
-                    "name" to it[CategoryTable.name], "updateDate" to it[CategoryTable.updateDate].toString()
+                    "name" to it[name],
+                    "updateDate" to it[updateDate].toString()
                 )
                 val uid = it[CategoryTable.id].value.toString()
-                result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
+                result.change(uid, lastUpdate, lastModified, operation, updateMap)
             }
         return result
     }
 
-    private fun getMangaCategoryUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+    private fun MangaCategoryTable.getUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
         val result = ArrayList<ResponseSyncDataItem>()
-        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable)
-            .slice(MangaCategoryTable.columns)
-            .select { (UserCategoryTable.userId eq userId) and (MangaCategoryTable.lastModified greater lastUpdate) }
+        (UserCategoryTable innerJoin CategoryTable innerJoin this)
+            .slice(columns)
+            .select { (UserCategoryTable.userId eq userId) and (lastModified greater lastUpdate) }
             .withDistinct()
             .forEach {
-                val createDate = it[MangaCategoryTable.createDate]
-                val updateDate = it[MangaCategoryTable.lastModified]
-                val operation = it[MangaCategoryTable.operation].value
+                val lastModified = it[lastModified]
+                val operation = it[operation].value
                 val updateMap = mapOf(
-                    "mangaId" to it[MangaCategoryTable.mangaId].value.toString(),
-                    "categoryId" to it[MangaCategoryTable.categoryId].value.toString(),
-                    "updateDate" to it[MangaCategoryTable.updateDate].toString()
+                    "mangaId" to it[mangaId].value.toString(),
+                    "categoryId" to it[categoryId].value.toString(),
+                    "updateDate" to it[updateDate].toString()
                 )
-                val uid = it[MangaCategoryTable.id].value.toString()
-                result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
+                val uid = it[id].value.toString()
+                result.change(uid, lastUpdate, lastModified, operation, updateMap)
             }
         return result
     }
 
-    private fun getMangaUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+    private fun MangaTable.getUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
         val result = ArrayList<ResponseSyncDataItem>()
-        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin MangaTable)
-            .slice(MangaTable.columns)
-            .select { (UserCategoryTable.userId eq userId) and (MangaTable.lastModified greater lastUpdate) }
+        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin this)
+            .slice(columns)
+            .select { (UserCategoryTable.userId eq userId) and (lastModified greater lastUpdate) }
             .withDistinct()
             .forEach {
-                val createDate = it[MangaTable.createDate]
-                val updateDate = it[MangaTable.lastModified]
-                val operation = it[MangaTable.operation].value
+                val lastModified = it[lastModified]
+                val operation = it[operation].value
                 val updateMap = mapOf(
-                    "title" to it[MangaTable.title],
-                    "sourceId" to it[MangaTable.sourceId].toString(),
-                    "url" to it[MangaTable.url],
-                    "coverUrl" to it[MangaTable.coverUrl],
-                    "updateDate" to it[MangaTable.updateDate].toString()
+                    "title" to it[title],
+                    "sourceId" to it[sourceId].toString(),
+                    "url" to it[url],
+                    "coverUrl" to it[coverUrl],
+                    "updateDate" to it[updateDate].toString()
                 )
-                val uid = it[MangaTable.id].value.toString()
-                result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
+                val uid = it[id].value.toString()
+                result.change(uid, lastUpdate, lastModified, operation, updateMap)
             }
         return result
     }
 
-    private fun getChapterUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
+    private fun ChapterTable.getUpdates(userId: UUID, lastUpdate: Long): List<ResponseSyncDataItem> {
         val result = ArrayList<ResponseSyncDataItem>()
-        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin MangaTable innerJoin ChapterTable)
-            .slice(ChapterTable.columns)
-            .select { (UserCategoryTable.userId eq userId) and (ChapterTable.lastModified greater lastUpdate) }
+        (UserCategoryTable innerJoin CategoryTable innerJoin MangaCategoryTable innerJoin MangaTable innerJoin this)
+            .slice(columns)
+            .select { (UserCategoryTable.userId eq userId) and (lastModified greater lastUpdate) }
             .withDistinct()
             .forEach {
-                val createDate = it[ChapterTable.createDate]
-                val updateDate = it[ChapterTable.lastModified]
-                val operation = it[ChapterTable.operation].value
+                val lastModified = it[lastModified]
+                val operation = it[operation].value
                 val updateMap = mapOf(
-                    "name" to it[ChapterTable.name],
-                    "mangaId" to it[ChapterTable.mangaId].value.toString(),
-                    "url" to it[ChapterTable.url],
-                    "isRead" to it[ChapterTable.isRead].toString(),
-                    "number" to it[ChapterTable.number].toString(),
-                    "lastPageRead" to it[ChapterTable.lastPageRead].toString(),
-                    "uploadDate" to it[ChapterTable.uploadDate].toString(),
-                    "updateDate" to it[ChapterTable.updateDate].toString()
+                    "name" to it[name],
+                    "mangaId" to it[mangaId].value.toString(),
+                    "url" to it[url],
+                    "isRead" to it[isRead].toString(),
+                    "number" to it[number].toString(),
+                    "lastPageRead" to it[lastPageRead].toString(),
+                    "uploadDate" to it[uploadDate].toString(),
+                    "updateDate" to it[updateDate].toString()
                 )
                 val uid = it[ChapterTable.id].value.toString()
-                result.change(uid, lastUpdate, createDate, updateDate, operation, updateMap)
+                result.change(uid, lastUpdate, lastModified, operation, updateMap)
             }
         return result
     }
@@ -482,15 +464,12 @@ class SyncRepository {
     private fun ArrayList<ResponseSyncDataItem>.change(
         uid: String,
         lastUpdate: Long,
-        createDate: Long,
         updateDate: Long,
         operation: Int,
         updateMap: Map<String, String?>
     ) {
-        val afterCreate = createDate > lastUpdate
         val afterUpdate = updateDate > lastUpdate
         when {
-            afterCreate && operation != Operation.DEL.id -> ResponseSyncDataItem(uid, Operation.INS.id, updateMap)
             afterUpdate && operation != Operation.DEL.id -> ResponseSyncDataItem(uid, operation, updateMap)
             afterUpdate && operation == Operation.DEL.id -> ResponseSyncDataItem(uid, Operation.DEL.id)
             else -> null
@@ -510,5 +489,5 @@ class SyncRepository {
 
     private fun <T> List<T>.takeIfNotEmpty(): List<T>? = takeIf { it.isNotEmpty() }
 
-    private val updateTime get() = Date().time
+    private val currentTime get() = Date().time
 }

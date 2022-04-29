@@ -10,11 +10,15 @@ import com.kwsilence.db.table.manga.MangaTable
 import com.kwsilence.db.table.manga.OperationTypeTable
 import com.kwsilence.db.table.manga.UserCategoryTable
 import com.kwsilence.mserver.BuildConfig
+import com.kwsilence.security.PasswordUtil
+import com.kwsilence.service.data.UserCred
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -27,6 +31,8 @@ object DatabaseUtil {
             password = BuildConfig.dbPass
         )
     }
+
+    private val testUserCred = UserCred("testusr@mail.ru", "testusr")
 
     fun initDatabase() {
         TransactionManager.defaultDatabase = db
@@ -55,6 +61,13 @@ object DatabaseUtil {
                 OperationTypeTable.insertIgnore {
                     it[id] = operation.id
                     it[type] = operation.type
+                }
+            }
+            if (UserTable.select { UserTable.mail eq (testUserCred.mail ?: "") }.firstOrNull() == null) {
+                UserTable.insert {
+                    it[mail] = testUserCred.mail.toString()
+                    it[password] = PasswordUtil.generatePassword(testUserCred.pass.toString())
+                    it[isConfirmed] = true
                 }
             }
         }
