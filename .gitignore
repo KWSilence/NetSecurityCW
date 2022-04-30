@@ -26,4 +26,5 @@ hs_err_pid*.log
 
 secrets
 shared
-db/pgdata
+db
+!db/docker.yml

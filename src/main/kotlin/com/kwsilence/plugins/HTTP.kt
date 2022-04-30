@@ -1,5 +1,6 @@
 package com.kwsilence.plugins
 
+import com.kwsilence.mserver.BuildConfig
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.plugins.compression.Compression
@@ -19,8 +20,10 @@ fun Application.configureHTTP() {
         }
     }
 
-    install(HttpsRedirect) {
-        sslPort = 8443
-        permanentRedirect = true
+    if (!BuildConfig.debug) {
+        install(HttpsRedirect) {
+            sslPort = 8443
+            permanentRedirect = true
+        }
     }
 }

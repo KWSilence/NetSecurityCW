@@ -6,10 +6,8 @@ import com.kwsilence.db.table.manga.MangaCategoryTable
 import com.kwsilence.db.table.manga.MangaTable
 
 val tableKeyOrder = listOf(
-    "category",
-    "manga",
-    "manga_category",
-    "chapter"
+    listOf("category", "manga"),
+    listOf("manga_category", "chapter")
 )
 
 val tables = mapOf(
