@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.konan.properties.loadProperties
 
-val ktorVersion = "2.0.0"
+val ktorVersion = "2.0.1"
 val kotlinVersion = "1.6.20"
 val logbackVersion = "1.2.11"
 val exposedVersion = "0.38.1"
@@ -93,6 +93,7 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgresVersion")
 
     implementation("io.jsonwebtoken:jjwt-api:$jwtVersion")
+    implementation("io.ktor:ktor-network-tls-certificates-jvm:2.0.1")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jwtVersion")
 

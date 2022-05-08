@@ -18,7 +18,7 @@ class SyncService(private val syncRepository: SyncRepository) {
         return syncRepository.update(userId, data)
     }
 
-    suspend fun sync(token: String?, data: SyncData?): Map<String,List<ResponseSyncDataItem>> {
+    suspend fun sync(token: String?, data: SyncData?): Map<String, List<ResponseSyncDataItem>> {
         val userId = (TokenUtil.checkAuthToken(token)["usr"] as? String)?.toUUID()
         userId ?: HttpStatusCode.Unauthorized.throwBase()
         data ?: (HttpStatusCode.BadRequest to "sync data not set").throwBase()

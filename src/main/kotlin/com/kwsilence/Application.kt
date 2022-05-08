@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
 @KtorExperimentalLocationsAPI
 @Suppress("unused")
 fun Application.module() {
-    if(BuildConfig.debug) setLogger()
+    if (BuildConfig.debug) setLogger()
     configureLocations()
     configureRouting()
     configureHTTP()

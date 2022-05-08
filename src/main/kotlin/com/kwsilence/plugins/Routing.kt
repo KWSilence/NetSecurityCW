@@ -59,7 +59,7 @@ fun Application.configureRouting() {
         }
 
         post(ApiHelper.RESET_PASS_PATH) {
-            val mail = call.receiveOrNull<Map<String,String>>()?.get("mail")
+            val mail = call.receiveOrNull<Map<String, String>>()?.get("mail")
             resetPasswordService.sendResetPasswordMail(mail, BuildConfig.useConfirm)
             call.respond(HttpStatusCode.OK, "password reset link sent")
         }
@@ -91,7 +91,7 @@ fun Application.configureRouting() {
         }
 
         post(ApiHelper.CONFIRM_PATH) {
-            val mail = call.receiveOrNull<Map<String,String>>()?.get("mail")
+            val mail = call.receiveOrNull<Map<String, String>>()?.get("mail")
             registrationService.sendConfirmMessage(mail)
             call.respond(HttpStatusCode.OK, "confirm mail link sent")
         }

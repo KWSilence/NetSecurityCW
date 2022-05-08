@@ -22,6 +22,7 @@ import io.ktor.http.HttpStatusCode
 import java.util.Date
 import java.util.UUID
 import kotlinx.coroutines.awaitAll
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
@@ -79,12 +80,11 @@ class SyncRepository {
 
     private fun CategoryTable.getCategory(userId: UUID, record: TableData) = runCatching {
         val categoryName = record.getOrMissing("name")
-        val delete = Operation.DEL.id
         (record.uid)?.toUUID()?.let { uid ->
-            select { id eq uid }.first()
+            select { id eq uid }.firstOrNull()
         } ?: innerJoin(UserCategoryTable)
             .slice(columns)
-            .select { (name eq categoryName) and (operation neq delete) and (UserCategoryTable.userId eq userId) }
+            .select { (name eq categoryName) and (UserCategoryTable.userId eq userId) }
             .firstOrNull()
     }.getOrNull()
 
@@ -130,6 +130,14 @@ class SyncRepository {
     private infix fun Map<String, List<ResponseDataUpdateItem>>.getCategoryId(record: DataUpdateItem): String? =
         record.data["_categoryId"]?.toInt()?.let { categoryId -> get("category")?.find { it.lid == categoryId }?.uid }
 
+    private fun CategoryTable.getNewCategoryOrder(userUID: UUID): Int =
+        innerJoin(UserCategoryTable)
+            .slice(CategoryTable.columns)
+            .select { (UserCategoryTable.userId eq userUID) }
+            .orderBy(order, SortOrder.DESC)
+            .firstOrNull()?.get(order)?.plus(1) ?: 0
+
+    // todo fix order troubles later
     private fun CategoryTable.proceedTable(userUID: UUID, record: TableData): String? = when (record.op) {
         Operation.INS.id, Operation.UPD.id -> {
             runCatching {
@@ -137,6 +145,7 @@ class SyncRepository {
                     if (record.update > category[updateDate]) {
                         update({ id eq category[id] }) {
                             it[name] = record.getOrMissing("name")
+                            it[order] = record.getOrMissing("order").toInt()
                             it[updateDate] = record.update
                             it[lastModified] = currentTime
                             it[operation] = record.op
@@ -146,6 +155,7 @@ class SyncRepository {
                 } ?: record.uid
             }.getOrNull() ?: insertAndGetId {
                 it[name] = record.getOrMissing("name")
+                it[order] = getNewCategoryOrder(userUID)
                 it[updateDate] = record.update
                 it[lastModified] = currentTime
                 it[operation] = record.op
@@ -154,6 +164,7 @@ class SyncRepository {
         Operation.DEL.id -> {
             record.uid?.also { uid ->
                 update({ id eq uid.toUUID() }) {
+                    it[order] = -1
                     it[updateDate] = currentTime
                     it[lastModified] = currentTime
                     it[operation] = record.op
@@ -325,7 +336,9 @@ class SyncRepository {
                 val lastModified = it[lastModified]
                 val operation = it[operation].value
                 val updateMap = mapOf(
-                    "name" to it[name], "updateDate" to it[updateDate].toString()
+                    "name" to it[name],
+                    "order" to it[order].toString(),
+                    "updateDate" to it[updateDate].toString()
                 )
                 val uid = it[CategoryTable.id].value.toString()
                 result.change(uid, lastUpdate, lastModified, operation, updateMap)
@@ -406,8 +419,8 @@ class SyncRepository {
         }?.let { syncData -> add(syncData) }
     }
 
-    private infix fun String.missing(field: String): Nothing =
-        (HttpStatusCode.BadRequest to "$this: missing $field").throwBase()
+    private infix fun TableData.missing(field: String): Nothing =
+        (HttpStatusCode.BadRequest to "$first: missing $field : $second").throwBase()
 
     private fun TableData.get(key: String): String? = second.data[key]
     private val TableData.op: Int get() = second.op
@@ -415,7 +428,7 @@ class SyncRepository {
     private val TableData.update: Long get() = second.update
 
     private fun TableData.getOrMissing(field: String, default: String? = null): String =
-        get(field) ?: default ?: (first missing field)
+        get(field) ?: default ?: (this missing field)
 
     private fun <T> List<T>.takeIfNotEmpty(): List<T>? = takeIf { it.isNotEmpty() }
     private fun invalidOperation(id: Int): Nothing =
