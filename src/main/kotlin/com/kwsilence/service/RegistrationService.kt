@@ -40,7 +40,8 @@ class RegistrationService(private val repository: AuthRepository) {
         } ?: (HttpStatusCode.BadRequest to "incorrect mail param").throwBase()
     }
 
-    fun confirmMail(confirmToken: String) {
+    fun confirmMail(confirmToken: String?) {
+        confirmToken ?: HttpStatusCode.NotFound.throwBase()
         val userId = repository.getUserIdByToken(confirmToken, Tokens.CONFIRM) ?: HttpStatusCode.NotFound.throwBase()
         repository.updateUser(userId, confirmed = true)
         repository.resetUserTokens(userId, listOf(Tokens.CONFIRM))

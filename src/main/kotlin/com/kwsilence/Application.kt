@@ -2,7 +2,6 @@ package com.kwsilence
 
 import com.kwsilence.db.DatabaseUtil
 import com.kwsilence.mserver.BuildConfig
-import com.kwsilence.plugins.ApiLocations.configureLocations
 import com.kwsilence.plugins.configureHTTP
 import com.kwsilence.plugins.configureMonitoring
 import com.kwsilence.plugins.configureRouting
@@ -11,7 +10,6 @@ import com.kwsilence.security.CertificateUtil
 import com.kwsilence.util.LogUtil.setLogger
 import com.kwsilence.util.TokenUtil
 import io.ktor.server.application.Application
-import io.ktor.server.locations.KtorExperimentalLocationsAPI
 import io.ktor.server.netty.EngineMain
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,11 +32,9 @@ fun main(args: Array<String>) {
     EngineMain.main(args)
 }
 
-@KtorExperimentalLocationsAPI
 @Suppress("unused")
 fun Application.module() {
     if (BuildConfig.debug) setLogger()
-    configureLocations()
     configureRouting()
     configureHTTP()
     configureMonitoring()

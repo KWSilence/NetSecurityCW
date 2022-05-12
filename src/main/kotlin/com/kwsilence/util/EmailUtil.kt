@@ -20,6 +20,7 @@ object EmailUtil {
             putIfAbsent("mail.smtp.auth", "true")
             putIfAbsent("mail.smtp.starttls.enable", "true")
             putIfAbsent("mail.smtp.ssl.trust", "smtp.mail.ru")
+            putIfAbsent("mail.smtp.ssl.protocols", "TLSv1.2")
         }.let { props -> Session.getDefaultInstance(props, MailAuth(BuildConfig.emailName, BuildConfig.emailPass)) }
 
     private val mailRegex = "^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\$".toRegex()

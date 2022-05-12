@@ -4,8 +4,8 @@ val ktorVersion = "2.0.1"
 val kotlinVersion = "1.6.20"
 val logbackVersion = "1.2.11"
 val exposedVersion = "0.38.1"
-val postgresVersion = "42.3.3"
-val jwtVersion = "0.11.2"
+val postgresVersion = "42.3.4"
+val jwtVersion = "0.11.5"
 
 val debug: String by project
 val use_confirm: String by project
@@ -76,9 +76,8 @@ dependencies {
     implementation("io.ktor:ktor-server-compression-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
-    implementation("io.ktor:ktor-server-locations:$ktorVersion")
-    implementation("io.ktor:ktor-network-tls-certificates:$ktorVersion")
     implementation("io.ktor:ktor-server-http-redirect-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-network-tls-certificates:$ktorVersion")
 
     implementation("io.ktor:ktor-server-call-logging-jvm:$ktorVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
