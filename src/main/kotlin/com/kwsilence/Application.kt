@@ -17,6 +17,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
+    EngineMain.main(args)
+}
+
+@Suppress("unused")
+fun Application.module() {
     runBlocking {
         val keyGenJob = CoroutineScope(Dispatchers.Default).launch {
             TokenUtil.apply {
@@ -29,11 +34,6 @@ fun main(args: Array<String>) {
         DatabaseUtil.initDatabase()
         keyGenJob.join()
     }
-    EngineMain.main(args)
-}
-
-@Suppress("unused")
-fun Application.module() {
     if (BuildConfig.debug) setLogger()
     configureRouting()
     configureHTTP()

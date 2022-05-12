@@ -62,14 +62,6 @@ buildConfig {
     buildConfigField("String", "jwtSecret", "\"$jwtSecret\"")
 }
 
-tasks {
-    shadowJar {
-        manifest {
-            attributes(Pair("Main-Class", "com.kwsilence.Application"))
-        }
-    }
-}
-
 dependencies {
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
