@@ -10,9 +10,10 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.koin.ktor.ext.get
 
 fun Routing.setupSyncController(
-    syncService: SyncService
+    syncService: SyncService = get()
 ) {
     post("/update") {
         val result = syncService.update(call.request.headers["Authorization"], call.receiveOrNull())

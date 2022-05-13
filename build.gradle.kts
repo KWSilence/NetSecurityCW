@@ -6,6 +6,7 @@ val logbackVersion = "1.2.11"
 val exposedVersion = "0.38.1"
 val postgresVersion = "42.3.4"
 val jwtVersion = "0.11.5"
+val koinVersion = "3.2.0"
 
 val debug: String by project
 val use_confirm: String by project
@@ -87,6 +88,9 @@ dependencies {
     implementation("io.ktor:ktor-network-tls-certificates-jvm:2.0.1")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jwtVersion")
+
+    implementation("io.insert-koin:koin-core:$koinVersion")
+    implementation("io.insert-koin:koin-ktor:$koinVersion")
 
     implementation("javax.mail:mail:1.5.0-b01")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")

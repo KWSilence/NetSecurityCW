@@ -16,11 +16,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.koin.ktor.ext.get
 
 fun Routing.setupAuthorizationController(
-    registrationService: RegistrationService,
-    loginService: LoginService,
-    resetPasswordService: ResetPasswordService
+    registrationService: RegistrationService = get(),
+    loginService: LoginService = get(),
+    resetPasswordService: ResetPasswordService = get()
 ) {
     post("/register") {
         registrationService.register(call.receiveOrNull())

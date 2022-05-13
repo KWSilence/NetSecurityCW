@@ -3,12 +3,6 @@ package com.kwsilence.plugins
 import com.kwsilence.controller.setupAuthorizationController
 import com.kwsilence.controller.setupExtensionController
 import com.kwsilence.controller.setupSyncController
-import com.kwsilence.db.repository.AuthRepository
-import com.kwsilence.db.repository.SyncRepository
-import com.kwsilence.service.LoginService
-import com.kwsilence.service.RegistrationService
-import com.kwsilence.service.ResetPasswordService
-import com.kwsilence.service.SyncService
 import com.kwsilence.util.ExceptionUtil
 import com.kwsilence.util.LogUtil
 import io.ktor.http.ContentType
@@ -23,20 +17,13 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 
 fun Application.configureRouting() {
-    val authRepository = AuthRepository()
-    val syncRepository = SyncRepository()
-    val loginService = LoginService(authRepository)
-    val registrationService = RegistrationService(authRepository)
-    val resetPasswordService = ResetPasswordService(authRepository)
-    val syncService = SyncService(syncRepository)
-
     routing {
         get {
             call.respondText("Hello World!", ContentType.Text.Plain, HttpStatusCode.OK)
         }
-        setupAuthorizationController(registrationService, loginService, resetPasswordService)
+        setupAuthorizationController()
         setupExtensionController()
-        setupSyncController(syncService)
+        setupSyncController()
     }
     install(StatusPages) {
         exception<ExceptionUtil.BaseException> { call, baseException ->
