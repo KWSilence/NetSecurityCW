@@ -37,9 +37,6 @@ group = "com.kwsilence"
 version = "0.0.1"
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
-
-//    val isDevelopment: Boolean = project.ext.has("development")
-//    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 repositories {
@@ -85,7 +82,6 @@ dependencies {
     implementation("org.postgresql:postgresql:$postgresVersion")
 
     implementation("io.jsonwebtoken:jjwt-api:$jwtVersion")
-    implementation("io.ktor:ktor-network-tls-certificates-jvm:2.0.1")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:$jwtVersion")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:$jwtVersion")
 

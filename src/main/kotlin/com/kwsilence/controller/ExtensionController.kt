@@ -8,7 +8,7 @@ import io.ktor.server.response.respondFile
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 
-fun Routing.setupExtensionController() {
+fun Routing.extensionController() {
     get("/apk/{name}") {
         FileUtil.shared("extension/apk/${call.parameters["name"]}")?.let { apk ->
             call.respondFile(apk)

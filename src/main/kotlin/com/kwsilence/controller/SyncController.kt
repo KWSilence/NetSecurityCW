@@ -12,7 +12,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.ktor.ext.get
 
-fun Routing.setupSyncController(
+fun Routing.syncController(
     syncService: SyncService = get()
 ) {
     post("/update") {

@@ -18,7 +18,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.ktor.ext.get
 
-fun Routing.setupAuthorizationController(
+fun Routing.authorizationController(
     registrationService: RegistrationService = get(),
     loginService: LoginService = get(),
     resetPasswordService: ResetPasswordService = get()

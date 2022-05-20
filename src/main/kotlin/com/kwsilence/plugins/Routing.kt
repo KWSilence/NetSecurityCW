@@ -1,8 +1,8 @@
 package com.kwsilence.plugins
 
-import com.kwsilence.controller.setupAuthorizationController
-import com.kwsilence.controller.setupExtensionController
-import com.kwsilence.controller.setupSyncController
+import com.kwsilence.controller.authorizationController
+import com.kwsilence.controller.extensionController
+import com.kwsilence.controller.syncController
 import com.kwsilence.util.ExceptionUtil
 import com.kwsilence.util.LogUtil
 import io.ktor.http.ContentType
@@ -21,9 +21,9 @@ fun Application.configureRouting() {
         get {
             call.respondText("Hello World!", ContentType.Text.Plain, HttpStatusCode.OK)
         }
-        setupAuthorizationController()
-        setupExtensionController()
-        setupSyncController()
+        authorizationController()
+        extensionController()
+        syncController()
     }
     install(StatusPages) {
         exception<ExceptionUtil.BaseException> { call, baseException ->
